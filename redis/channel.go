@@ -48,6 +48,9 @@ func messageLoop(conn Connection) <-chan string {
 	output := make(chan string, messageBufferSize)
 	go func() {
 		defer close(output)
+		defer func() {
+			recover()
+		}()
 		working := true
 		for working {
 			response := getResponse(conn)
