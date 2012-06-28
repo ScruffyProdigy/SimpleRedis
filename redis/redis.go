@@ -114,6 +114,10 @@ func (this *Client) Float(key string) Float {
 	return newFloat(this, key)
 }
 
+func (this *Client) Hash(key string) Hash {
+	return newHash(this, key)
+}
+
 func (this *Client) List(key string) List {
 	return newList(this, key)
 }
