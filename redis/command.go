@@ -2,7 +2,9 @@ package redis
 
 import (
 	"bytes"
+	"errors"
 	"io"
+	"strings"
 
 //	"bufio"
 )
@@ -29,60 +31,110 @@ var (
 
 type command interface {
 	arguments() []string
-	callback() func(*response)
+	callback() func(*response) error
 }
 
 type Executor interface {
-	Execute(command)
+	Execute(command) error
+	ErrCallback(error, string)
 }
 
-func (this Client) Execute(command command) {
-	go this.useConnection(func(conn Connection) {
-		conn.Execute(command)
+func (this Client) Execute(command command) error {
+	go this.useConnection(func(conn *Connection) {
+		err := conn.Execute(command)
+		if err != nil {
+			// we are in a separate routine and cannot return the error
+			// instead we are going to try to use an error callback if it exists, otherwise, we will panic
+			if this.errCallback == nil {
+				panic(err)
+			}
+			this.errCallback(err, strings.Join(command.arguments(), " "))
+		}
 	})
+	return nil
 }
 
-func (this Connection) input(command command) {
-	_, err := this.Write(buildCommand(command.arguments()))
-	checkForError(err)
+func (this Client) ErrCallback(e error, s string) {
+	this.errCallback(e, s)
 }
 
-func (this Connection) output(command command) {
-	command.callback()(getResponse(this))
-}
-
-func (this Connection) Execute(command command) {
-	this.input(command)
-	this.output(command)
-}
-
-func buildCommand(arguments []string) []byte {
-	buf := bytes.NewBuffer(nil)
-
-	buf.WriteByte(isMultibulk)
-	buf.WriteString(itoa(len(arguments)))
-	buf.Write(delimiter)
-
-	for _, arg := range arguments {
-		buf.WriteByte(isBulk)
-		buf.WriteString(itoa(len(arg)))
-		buf.Write(delimiter)
-		buf.WriteString(arg)
-		buf.Write(delimiter)
+func (this Connection) input(command command) error {
+	comm, err := buildCommand(command.arguments())
+	if err != nil {
+		return err
 	}
 
-	return buf.Bytes()
+	_, err = this.Write(comm)
+	return err
 }
 
-func getResponse(conn io.Reader) *response {
+func (this Connection) output(command command) error {
+	res, err := getResponse(this)
+	if err != nil {
+		return err
+	}
+
+	return command.callback()(res)
+}
+
+func (this Connection) Execute(command command) error {
+	err := this.input(command)
+	if err != nil {
+		return err
+	}
+
+	err = this.output(command)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func buildCommand(arguments []string) ([]byte, error) {
+	buf := bytes.NewBuffer(nil)
+	var err error
+
+	if err = buf.WriteByte(isMultibulk); err != nil {
+		return nil, err
+	}
+	if _, err = buf.WriteString(itoa(len(arguments))); err != nil {
+		return nil, err
+	}
+	if _, err = buf.Write(delimiter); err != nil {
+		return nil, err
+	}
+
+	for _, arg := range arguments {
+		if err = buf.WriteByte(isBulk); err != nil {
+			return nil, err
+		}
+		if _, err = buf.WriteString(itoa(len(arg))); err != nil {
+			return nil, err
+		}
+		if _, err = buf.Write(delimiter); err != nil {
+			return nil, err
+		}
+		if _, err = buf.WriteString(arg); err != nil {
+			return nil, err
+		}
+		if _, err = buf.Write(delimiter); err != nil {
+			return nil, err
+		}
+	}
+
+	return buf.Bytes(), nil
+}
+
+func getResponse(conn io.Reader) (*response, error) {
 	var buffer [1]byte
 	_, err := conn.Read(buffer[:])
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	switch buffer[0] {
 	case isError:
-		panic("Redis Error:" + getLongString(conn))
+		return nil, err
 	case isStatus, isInt:
 		return getStringResponse(conn)
 	case isBulk:
@@ -90,92 +142,114 @@ func getResponse(conn io.Reader) *response {
 	case isMultibulk:
 		return getMultiBulk(conn)
 	}
-	return nil
+	return nil, errors.New("unexpected data")
 }
 
-func getString(conn io.Reader) string {
+func getString(conn io.Reader) (string, error) {
 	var buffer [bufferSize]byte
 	j := -len(delimiter)
 	i := 0
 	for {
 		if j >= 0 && bytes.Equal(buffer[j:i], delimiter) {
-			return string(buffer[:j])
+			return string(buffer[:j]), nil
 		}
 		if i >= bufferSize {
-			panic("short buffer")
+			return "", errors.New("Short Buffer")
 		}
 		conn.Read(buffer[i : i+1])
 		i++
 		j++
 	}
-	return string(buffer[:])
+	return string(buffer[:]), nil
 }
 
-func getLongString(conn io.Reader) string {
+func getLongString(conn io.Reader) (string, error) {
 	var buffer [longBufferSize]byte
 	j := -len(delimiter)
 	i := 0
 	for {
 		if j >= 0 && bytes.Equal(buffer[j:i], delimiter) {
-			return string(buffer[:j])
+			return string(buffer[:j]), nil
 		}
 		if i >= bufferSize {
-			panic("short buffer")
+			return "", errors.New("Short Buffer")
 		}
 		conn.Read(buffer[i : i+1])
 		i++
 		j++
 	}
-	return string(buffer[:])
+	return string(buffer[:]), nil
 }
 
-func getStringResponse(conn io.Reader) *response {
-	return &response{
-		val: getString(conn),
+func getStringResponse(conn io.Reader) (*response, error) {
+	val, err := getString(conn)
+	if err != nil {
+		return nil, err
 	}
+	return &response{
+		val: val,
+	}, nil
 }
 
-func getBulk(conn io.Reader) *response {
-	line := getString(conn)
-	strlen := atoi(line)
+func getBulk(conn io.Reader) (*response, error) {
+	line, err := getString(conn)
+	if err != nil {
+		return nil, err
+	}
+
+	strlen, err := atoi(line)
+	if err != nil {
+		return nil, err
+	}
 	if strlen == -1 {
-		return nil
+		return nil, nil
 	}
 
 	b := make([]byte, strlen+len(delimiter))
 	i, err := conn.Read(b)
 	if err != nil {
 		//the read should be successful
-		panic(err)
+		return nil, err
 	}
 	if i != strlen+len(delimiter) {
 		//the read should go through every byte we have set out
-		panic("underread")
+		return nil, errors.New("underread")
 	}
 	if !bytes.Equal(b[strlen:], delimiter) {
 		//the read should end with a crlf
-		panic("Incorrect Redis bulk length")
+		return nil, errors.New("Incorrect Redis bulk length")
 	}
 
 	return &response{
 		val: string(b[:strlen]),
-	}
+	}, nil
 }
 
-func getMultiBulk(conn io.Reader) *response {
-	line := getString(conn)
-	cResponses := atoi(string(line))
+func getMultiBulk(conn io.Reader) (*response, error) {
+	line, err := getString(conn)
+	if err != nil {
+		return nil, err
+	}
+
+	cResponses, err := atoi(string(line))
+	if err != nil {
+		return nil, err
+	}
 	if cResponses == -1 {
-		return nil
+		return nil, nil
 	}
 
 	r := new(response)
 	r.subresponses = make([]*response, cResponses)
 
 	for iResponse := 0; iResponse < int(cResponses); iResponse++ {
-		r.subresponses[iResponse] = getResponse(conn)
+		var err error
+		r.subresponses[iResponse], err = getResponse(conn)
+		if err != nil {
+			return nil, err
+		}
 	}
-	return r
+	return r, nil
 }
 
 /*
@@ -198,12 +272,13 @@ func (this BoolCommand) arguments() []string {
 	return this.args
 }
 
-func (this BoolCommand) callback() func(*response) {
-	return func(r *response) {
+func (this BoolCommand) callback() func(*response) error {
+	return func(r *response) error {
 		defer close(this.output)
 		if r != nil {
 			this.output <- r.val == "1"
 		}
+		return nil
 	}
 }
 
@@ -227,12 +302,17 @@ func (this IntCommand) arguments() []string {
 	return this.args
 }
 
-func (this IntCommand) callback() func(*response) {
-	return func(r *response) {
+func (this IntCommand) callback() func(*response) error {
+	return func(r *response) error {
 		defer close(this.output)
 		if r != nil {
-			this.output <- atoi(r.val)
+			res, err := atoi(r.val)
+			if err != nil {
+				return err
+			}
+			this.output <- res
 		}
+		return nil
 	}
 }
 
@@ -256,12 +336,17 @@ func (this FloatCommand) arguments() []string {
 	return this.args
 }
 
-func (this FloatCommand) callback() func(*response) {
-	return func(r *response) {
+func (this FloatCommand) callback() func(*response) error {
+	return func(r *response) error {
 		defer close(this.output)
 		if r != nil {
-			this.output <- atof(r.val)
+			f, err := atof(r.val)
+			if err != nil {
+				return err
+			}
+			this.output <- f
 		}
+		return nil
 	}
 }
 
@@ -285,13 +370,14 @@ func (this StringCommand) arguments() []string {
 	return this.args
 }
 
-func (this StringCommand) callback() func(*response) {
-	return func(r *response) {
+func (this StringCommand) callback() func(*response) error {
+	return func(r *response) error {
 		defer close(this.output)
 
 		if r != nil {
 			this.output <- r.val
 		}
+		return nil
 	}
 }
 
@@ -315,8 +401,8 @@ func (this SliceCommand) arguments() []string {
 	return this.args
 }
 
-func (this SliceCommand) callback() func(*response) {
-	return func(r *response) {
+func (this SliceCommand) callback() func(*response) error {
+	return func(r *response) error {
 		defer close(this.output)
 
 		if r != nil {
@@ -330,6 +416,8 @@ func (this SliceCommand) callback() func(*response) {
 
 			this.output <- actualResponse
 		}
+
+		return nil
 	}
 }
 
@@ -355,8 +443,8 @@ func (this MaybeSliceCommand) arguments() []string {
 	return this.args
 }
 
-func (this MaybeSliceCommand) callback() func(*response) {
-	return func(r *response) {
+func (this MaybeSliceCommand) callback() func(*response) error {
+	return func(r *response) error {
 		defer close(this.output)
 		if r != nil {
 			actualResponse := make([]*string, len(r.subresponses))
@@ -369,6 +457,7 @@ func (this MaybeSliceCommand) callback() func(*response) {
 
 			this.output <- actualResponse
 		}
+		return nil
 	}
 }
 
@@ -392,8 +481,8 @@ func (this MapCommand) arguments() []string {
 	return this.args
 }
 
-func (this MapCommand) callback() func(*response) {
-	return func(r *response) {
+func (this MapCommand) callback() func(*response) error {
+	return func(r *response) error {
 		defer close(this.output)
 		if r != nil {
 			m := make(map[string]string, len(r.subresponses)/2)
@@ -404,6 +493,7 @@ func (this MapCommand) callback() func(*response) {
 			}
 			this.output <- m
 		}
+		return nil
 	}
 }
 
@@ -430,9 +520,10 @@ func (this NilCommand) arguments() []string {
 	return this.args
 }
 
-func (this NilCommand) callback() func(*response) {
-	return func(r *response) {
+func (this NilCommand) callback() func(*response) error {
+	return func(r *response) error {
+		defer close(this.output)
 		this.output <- nothing{}
-		close(this.output)
+		return nil
 	}
 }

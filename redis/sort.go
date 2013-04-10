@@ -1,5 +1,9 @@
 package redis
 
+import (
+	"errors"
+)
+
 type sortLimit struct {
 	min, max int
 }
@@ -25,7 +29,7 @@ type Sorter struct {
 
 func (this Sorter) sortargs() []string {
 	if !this.typeSet {
-		panic("Sort Alphabetically or Numerically?!")
+		this.key.client.ErrCallback(errors.New("Argument error"), "Can't Tell If Should Sort Alphabetically or Numerically?!")
 	}
 	result := make([]string, 0, 10)
 	if this.by != nil {
@@ -51,9 +55,6 @@ func (this Sorter) sortstoreargs(dest string) []string {
 }
 
 func (this Sorter) Limit(min, max int) Sorter {
-	if this.limit != nil {
-		panic("Sort 'Limit' already set!")
-	}
 	this.limit = &sortLimit{
 		min: min,
 		max: max,
@@ -62,35 +63,18 @@ func (this Sorter) Limit(min, max int) Sorter {
 }
 
 func (this Sorter) Alphabetically() Sorter {
-	if this.typeSet {
-		str := "Sort already sorting numerically"
-		if this.alpha {
-			str = "Sort already sorting alphabetically"
-		}
-		panic(str)
-	}
 	this.alpha = true
 	this.typeSet = true
 	return this
 }
 
 func (this Sorter) Numerically() Sorter {
-	if this.typeSet {
-		str := "Sort already sorting numerically"
-		if this.alpha {
-			str = "Sort already sorting alphabetically"
-		}
-		panic(str)
-	}
 	this.typeSet = true
 	return this
 }
 
 //if we could figure out what kind of pattern was referred to here, we could automatically set alphabetically or numerically
 func (this Sorter) By(pattern string) Sorter {
-	if this.by != nil {
-		panic("Sort 'By' already set")
-	}
 	this.by = &sortBy{
 		pattern: pattern,
 	}
@@ -120,10 +104,14 @@ func (this Sorter) Ints() <-chan []int {
 	realoutput := make(chan []int, 1)
 	midway := this.Strings()
 	go func() {
+		defer close(realoutput)
 		if output, ok := <-midway; ok {
-			realoutput <- stringsToInts(output)
+			ints, err := stringsToInts(output)
+			if err != nil {
+				this.key.client.ErrCallback(err, "sorting ints")
+			}
+			realoutput <- ints
 		}
-		close(realoutput)
 	}()
 	return realoutput
 }
@@ -132,10 +120,14 @@ func (this Sorter) Floats() <-chan []float64 {
 	realoutput := make(chan []float64, 1)
 	midway := this.Strings()
 	go func() {
+		defer close(realoutput)
 		if output, ok := <-midway; ok {
-			realoutput <- stringsToFloats(output)
+			floats, err := stringsToFloats(output)
+			if err != nil {
+				this.key.client.ErrCallback(err, "sorting floats")
+			}
+			realoutput <- floats
 		}
-		close(realoutput)
 	}()
 	return realoutput
 }
@@ -151,18 +143,21 @@ func (this Sorter) MaybeInts() <-chan []*int {
 	realoutput := make(chan []*int, 1)
 	midway := this.MaybeStrings()
 	go func() {
+		defer close(realoutput)
 		if strings, ok := <-midway; ok {
 			ints := make([]*int, len(strings))
 			for i, str := range strings {
 				if str != nil {
-					j := atoi(*str)
+					j, err := atoi(*str)
+					if err != nil {
+						this.key.client.ErrCallback(err, "sorting ints")
+					}
 					ints[i] = &j
 				}
 			}
 
 			realoutput <- ints
 		}
-		close(realoutput)
 	}()
 	return realoutput
 }
@@ -171,18 +166,21 @@ func (this Sorter) MaybeFloats() <-chan []*float64 {
 	realoutput := make(chan []*float64, 1)
 	midway := this.MaybeStrings()
 	go func() {
+		defer close(realoutput)
 		if strings, ok := <-midway; ok {
 			floats := make([]*float64, len(strings))
 			for i, str := range strings {
 				if str != nil {
-					j := atof(*str)
+					j, err := atof(*str)
+					if err != nil {
+						this.key.client.ErrCallback(err, "sorting floats")
+					}
 					floats[i] = &j
 				}
 			}
 
 			realoutput <- floats
 		}
-		close(realoutput)
 	}()
 	return realoutput
 }

@@ -44,7 +44,7 @@ func getError(rec interface{}) error {
 	return errors.New("Unknown Error:" /*+fmt.Sprintf(rec)*/)
 }
 
-func messageLoop(conn Connection) <-chan string {
+func messageLoop(conn *Connection, errCallback errCallback) <-chan string {
 	output := make(chan string, messageBufferSize)
 	go func() {
 		defer close(output)
@@ -53,7 +53,11 @@ func messageLoop(conn Connection) <-chan string {
 		}()
 		working := true
 		for working {
-			response := getResponse(conn)
+			response, err := getResponse(conn)
+			if err != nil {
+				errCallback(err, "Message Loop Error")
+				working = false
+			}
 
 			switch response.subresponses[0].val {
 			case "unsubscribe":
@@ -93,7 +97,7 @@ func (this Channel) PatternSubscribe(action func(string)) (startSignal <-chan no
 }
 
 func (this Channel) blockingSubscription(subscription func(<-chan string), sub, unsub string) {
-	this.client.useNewConnection(func(conn Connection) {
+	this.client.useNewConnection(func(conn *Connection) {
 		subscriber, result := newNilCommand(this.args(sub))
 		conn.Execute(subscriber)
 		<-result
@@ -105,7 +109,7 @@ func (this Channel) blockingSubscription(subscription func(<-chan string), sub, 
 			conn.input(unsubscriber)
 		}()
 
-		output := messageLoop(conn)
+		output := messageLoop(conn, this.client.errCallback)
 		subscription(output)
 
 		return

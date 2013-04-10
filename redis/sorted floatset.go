@@ -68,7 +68,11 @@ func (this SortedFloatSet) IndexedBetween(start, stop int) <-chan []float64 {
 	go func() {
 		defer close(realoutput)
 		if midway, ok := <-output; ok {
-			realoutput <- stringsToFloats(midway)
+			floats, err := stringsToFloats(midway)
+			if err != nil {
+				this.client.ErrCallback(err, "zrange")
+			}
+			realoutput <- floats
 		}
 	}()
 	return realoutput
@@ -81,7 +85,12 @@ func (this SortedFloatSet) ReverseIndexedBetween(start, stop int) <-chan []float
 	go func() {
 		defer close(realoutput)
 		if midway, ok := <-output; ok {
-			realoutput <- stringsToFloats(midway)
+			floats, err := stringsToFloats(midway)
+			if err != nil {
+				this.client.ErrCallback(err, "zrevrange")
+				return
+			}
+			realoutput <- floats
 		}
 	}()
 	return realoutput
@@ -107,9 +116,6 @@ func (this SortedFloatSet) Scores() *SortedFloatSetRange {
 
 func (this *SortedFloatSetRange) Above(min float64) *SortedFloatSetRange {
 	if this.min == "-inf" || this.fmin >= min {
-		if min >= this.fmax {
-			panic("nil range")
-		}
 		this.fmin = min
 		this.min = ftoa(min)
 	}
@@ -118,9 +124,6 @@ func (this *SortedFloatSetRange) Above(min float64) *SortedFloatSetRange {
 
 func (this *SortedFloatSetRange) Below(max float64) *SortedFloatSetRange {
 	if this.max == "+inf" || this.fmax <= max {
-		if max <= this.fmin {
-			panic("nil range")
-		}
 		this.fmax = max
 		this.max = ftoa(max)
 	}
@@ -129,9 +132,6 @@ func (this *SortedFloatSetRange) Below(max float64) *SortedFloatSetRange {
 
 func (this *SortedFloatSetRange) AboveOrEqualTo(min float64) *SortedFloatSetRange {
 	if this.min == "-inf" || this.fmin > min {
-		if min < this.fmax {
-			panic("nil range")
-		}
 		this.fmin = min
 		this.min = "(" + ftoa(min)
 	}
@@ -140,9 +140,6 @@ func (this *SortedFloatSetRange) AboveOrEqualTo(min float64) *SortedFloatSetRang
 
 func (this *SortedFloatSetRange) BelowOrEqualTo(max float64) *SortedFloatSetRange {
 	if this.max == "+inf" || this.fmax < max {
-		if max < this.fmin {
-			panic("nil range")
-		}
 		this.fmax = max
 		this.max = "(" + ftoa(max)
 	}
@@ -192,7 +189,12 @@ func (this *SortedFloatSetRange) Get() <-chan []float64 {
 	go func() {
 		defer close(realoutput)
 		if midway, ok := <-output; ok {
-			realoutput <- stringsToFloats(midway)
+			floats, err := stringsToFloats(midway)
+			if err != nil {
+				this.key.client.ErrCallback(err, "sort by score")
+				return
+			}
+			realoutput <- floats
 		}
 	}()
 	return realoutput
@@ -217,7 +219,19 @@ func (this *SortedFloatSetRange) GetWithScores() <-chan map[float64]float64 {
 		if midway, ok := <-output; ok {
 			result := make(map[float64]float64, len(midway))
 			for k, v := range midway {
-				result[atof(k)] = atof(v)
+				fk, err := atof(k)
+				if err != nil {
+					this.key.client.ErrCallback(err, "sorting with scores (key)")
+					return
+				}
+
+				fv, err := atof(v)
+				if err != nil {
+					this.key.client.ErrCallback(err, "sorting with scores (value)")
+					return
+				}
+
+				result[fk] = fv
 			}
 			realoutput <- result
 		}

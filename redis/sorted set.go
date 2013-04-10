@@ -93,9 +93,6 @@ func (this SortedSet) Scores() *SortedSetRange {
 
 func (this *SortedSetRange) Above(min float64) *SortedSetRange {
 	if this.min == "-inf" || this.fmin >= min {
-		if min >= this.fmax {
-			panic("nil range")
-		}
 		this.fmin = min
 		this.min = ftoa(min)
 	}
@@ -104,9 +101,6 @@ func (this *SortedSetRange) Above(min float64) *SortedSetRange {
 
 func (this *SortedSetRange) Below(max float64) *SortedSetRange {
 	if this.max == "+inf" || this.fmax <= max {
-		if max <= this.fmin {
-			panic("nil range")
-		}
 		this.fmax = max
 		this.max = ftoa(max)
 	}
@@ -115,9 +109,6 @@ func (this *SortedSetRange) Below(max float64) *SortedSetRange {
 
 func (this *SortedSetRange) AboveOrEqualTo(min float64) *SortedSetRange {
 	if this.min == "-inf" || this.fmin > min {
-		if min < this.fmax {
-			panic("nil range")
-		}
 		this.fmin = min
 		this.min = "(" + ftoa(min)
 	}
@@ -126,9 +117,6 @@ func (this *SortedSetRange) AboveOrEqualTo(min float64) *SortedSetRange {
 
 func (this *SortedSetRange) BelowOrEqualTo(max float64) *SortedSetRange {
 	if this.max == "+inf" || this.fmax < max {
-		if max < this.fmin {
-			panic("nil range")
-		}
 		this.fmax = max
 		this.max = "(" + ftoa(max)
 	}
@@ -196,7 +184,11 @@ func (this *SortedSetRange) GetWithScores() <-chan map[string]float64 {
 		if midway, ok := <-output; ok {
 			result := make(map[string]float64, len(midway))
 			for k, v := range midway {
-				result[k] = atof(v)
+				var err error
+				result[k], err = atof(v)
+				if err != nil {
+					this.key.client.ErrCallback(err, "sorting with scores")
+				}
 			}
 			realoutput <- result
 		}

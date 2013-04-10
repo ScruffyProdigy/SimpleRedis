@@ -31,37 +31,51 @@ type Connection struct {
 	id int
 }
 
+type errCallback func(error, string)
+
 type Client struct {
-	pool   chan Connection
-	config Config
+	pool        chan *Connection // 	a semaphore of connections to draw from when multiple threads want to connect
+	config      Config           //	connection details, so we know how to connect to redis
+	errCallback errCallback      //	a callback function - since we operate in a separate goroutine, we can't return an error, instead we call this function sending it the error, and the command we tried to issue
 }
 
-func New(config Config) *Client {
+func New(config Config) (*Client, error) {
 	this := new(Client)
 	this.config = config
 
-	this.pool = make(chan Connection, config.ConnectionCount)
+	this.pool = make(chan *Connection, config.ConnectionCount)
 	for i := 0; i < config.ConnectionCount; i++ {
-		this.pool <- this.newConnection()
+		conn, err := this.newConnection()
+		if err != nil {
+			return nil, err
+		}
+
+		this.pool <- conn
 	}
 
-	//	err := this.Test()
-	//	checkForError(err)
-	return this
+	return this, nil
 }
 
-func Load(configfile io.Reader) *Client {
+func Load(configfile io.Reader) (*Client, error) {
 	config := DefaultConfiguration()
 	dec := json.NewDecoder(configfile)
 	err := dec.Decode(&config)
-	checkForError(err)
+	if err != nil {
+		return nil, err
+	}
 
 	return New(config)
 }
 
-func (this *Client) newConnection() Connection {
+func (this *Client) SetErrorCallback(callback func(error, string)) {
+	this.errCallback = callback
+}
+
+func (this *Client) newConnection() (*Connection, error) {
 	conn, err := net.Dial(this.config.NetType, this.config.NetAddress)
-	checkForError(err)
+	if err != nil {
+		return nil, err
+	}
 
 	if this.config.Password != "" {
 		//		this.UsePassword(config.Password).WithConn(conn)
@@ -69,12 +83,12 @@ func (this *Client) newConnection() Connection {
 	if this.config.DBid != 1 {
 		//		this.UseDatabase(config.DBid).WithConn(conn)		
 	}
-	c := Connection{conn, nextID}
+	c := &Connection{conn, nextID}
 	nextID++
-	return c
+	return c, nil
 }
 
-func (this *Client) useConnection(callback func(Connection)) {
+func (this *Client) useConnection(callback func(*Connection)) {
 	conn := <-this.pool
 	defer func() {
 		this.pool <- conn
@@ -83,19 +97,17 @@ func (this *Client) useConnection(callback func(Connection)) {
 	callback(conn)
 }
 
-func (this *Client) useNewConnection(callback func(Connection)) {
-	conn := this.newConnection()
+func (this *Client) useNewConnection(callback func(*Connection)) {
+	conn, err := this.newConnection()
+	if err != nil {
+		this.errCallback(err, "new connection")
+	}
+
 	defer func() {
 		conn.Close()
 	}()
 
 	callback(conn)
-}
-
-func checkForError(err error) {
-	if err != nil {
-		panic(err)
-	}
 }
 
 func (this *Client) Key(key string) Key {

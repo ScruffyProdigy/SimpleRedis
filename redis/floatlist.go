@@ -67,10 +67,15 @@ func (this FloatList) BlockUntilLeftPopWithTimeout(timeout int) <-chan float64 {
 	this.Execute(command)
 	realoutput := make(chan float64, 1)
 	go func() {
+		defer close(realoutput)
 		if slice, ok := <-output; ok {
-			realoutput <- atof(slice[1])
+			f, err := atof(slice[1])
+			if err != nil {
+				this.client.ErrCallback(err, "blpop")
+				return
+			}
+			realoutput <- f
 		}
-		close(realoutput)
 	}()
 	return realoutput
 }
@@ -92,10 +97,15 @@ func (this FloatList) BlockUntilRightPopWithTimeout(timeout int) <-chan float64 
 	this.Execute(command)
 	realoutput := make(chan float64, 1)
 	go func() {
+		defer close(realoutput)
 		if slice, ok := <-output; ok {
-			realoutput <- atof(slice[1])
+			f, err := atof(slice[1])
+			if err != nil {
+				this.client.ErrCallback(err, "brpop")
+				return
+			}
+			realoutput <- f
 		}
-		close(realoutput)
 	}()
 	return realoutput
 }
@@ -147,10 +157,15 @@ func (this FloatList) GetFromRange(left, right int) <-chan []float64 {
 	this.Execute(command)
 	realoutput := make(chan []float64, 1)
 	go func() {
+		defer close(realoutput)
 		if slice, ok := <-output; ok {
-			realoutput <- stringsToFloats(slice)
+			floats, err := stringsToFloats(slice)
+			if err != nil {
+				this.client.ErrCallback(err, "lrange")
+				return
+			}
+			realoutput <- floats
 		}
-		close(realoutput)
 	}()
 	return realoutput
 }

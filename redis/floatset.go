@@ -36,10 +36,15 @@ func (this FloatSet) Members() <-chan []float64 {
 	this.Execute(command)
 	realoutput := make(chan []float64, 1)
 	go func() {
+		defer close(realoutput)
 		if slice, ok := <-output; ok {
-			realoutput <- stringsToFloats(slice)
+			floats, err := stringsToFloats(slice)
+			if err != nil {
+				this.client.ErrCallback(err, "smembers")
+				return
+			}
+			realoutput <- floats
 		}
-		close(realoutput)
 	}()
 	return realoutput
 }
@@ -73,10 +78,15 @@ func (this FloatSet) Intersection(otherSet FloatSet) <-chan []float64 {
 	this.Execute(command)
 	realoutput := make(chan []float64, 1)
 	go func() {
+		defer close(realoutput)
 		if slice, ok := <-output; ok {
-			realoutput <- stringsToFloats(slice)
+			floats, err := stringsToFloats(slice)
+			if err != nil {
+				this.client.ErrCallback(err, "sinter")
+				return
+			}
+			realoutput <- floats
 		}
-		close(realoutput)
 	}()
 	return realoutput
 }
@@ -86,10 +96,15 @@ func (this FloatSet) Union(otherSet FloatSet) <-chan []float64 {
 	this.Execute(command)
 	realoutput := make(chan []float64, 1)
 	go func() {
+		defer close(realoutput)
 		if slice, ok := <-output; ok {
-			realoutput <- stringsToFloats(slice)
+			floats, err := stringsToFloats(slice)
+			if err != nil {
+				this.client.ErrCallback(err, "sunion")
+				return
+			}
+			realoutput <- floats
 		}
-		close(realoutput)
 	}()
 	return realoutput
 }
@@ -99,10 +114,15 @@ func (this FloatSet) Difference(otherSet FloatSet) <-chan []float64 {
 	this.Execute(command)
 	realoutput := make(chan []float64, 1)
 	go func() {
+		defer close(realoutput)
 		if slice, ok := <-output; ok {
-			realoutput <- stringsToFloats(slice)
+			floats, err := stringsToFloats(slice)
+			if err != nil {
+				this.client.ErrCallback(err, "difference")
+				return
+			}
+			realoutput <- floats
 		}
-		close(realoutput)
 	}()
 	return realoutput
 }

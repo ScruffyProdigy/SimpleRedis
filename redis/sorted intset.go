@@ -68,7 +68,11 @@ func (this SortedIntSet) IndexedBetween(start, stop int) <-chan []int {
 	go func() {
 		defer close(realoutput)
 		if midway, ok := <-output; ok {
-			realoutput <- stringsToInts(midway)
+			ints, err := stringsToInts(midway)
+			if err != nil {
+				this.client.ErrCallback(err, "zrange")
+			}
+			realoutput <- ints
 		}
 	}()
 	return realoutput
@@ -81,7 +85,11 @@ func (this SortedIntSet) ReverseIndexedBetween(start, stop int) <-chan []int {
 	go func() {
 		defer close(realoutput)
 		if midway, ok := <-output; ok {
-			realoutput <- stringsToInts(midway)
+			ints, err := stringsToInts(midway)
+			if err != nil {
+				this.client.ErrCallback(err, "zrevrange")
+			}
+			realoutput <- ints
 		}
 	}()
 	return realoutput
@@ -107,9 +115,6 @@ func (this SortedIntSet) Scores() *SortedIntSetRange {
 
 func (this *SortedIntSetRange) Above(min float64) *SortedIntSetRange {
 	if this.min == "-inf" || this.fmin >= min {
-		if min >= this.fmax {
-			panic("nil range")
-		}
 		this.fmin = min
 		this.min = ftoa(min)
 	}
@@ -118,9 +123,6 @@ func (this *SortedIntSetRange) Above(min float64) *SortedIntSetRange {
 
 func (this *SortedIntSetRange) Below(max float64) *SortedIntSetRange {
 	if this.max == "+inf" || this.fmax <= max {
-		if max <= this.fmin {
-			panic("nil range")
-		}
 		this.fmax = max
 		this.max = ftoa(max)
 	}
@@ -129,9 +131,6 @@ func (this *SortedIntSetRange) Below(max float64) *SortedIntSetRange {
 
 func (this *SortedIntSetRange) AboveOrEqualTo(min float64) *SortedIntSetRange {
 	if this.min == "-inf" || this.fmin > min {
-		if min < this.fmax {
-			panic("nil range")
-		}
 		this.fmin = min
 		this.min = "(" + ftoa(min)
 	}
@@ -140,9 +139,6 @@ func (this *SortedIntSetRange) AboveOrEqualTo(min float64) *SortedIntSetRange {
 
 func (this *SortedIntSetRange) BelowOrEqualTo(max float64) *SortedIntSetRange {
 	if this.max == "+inf" || this.fmax < max {
-		if max < this.fmin {
-			panic("nil range")
-		}
 		this.fmax = max
 		this.max = "(" + ftoa(max)
 	}
@@ -192,7 +188,11 @@ func (this *SortedIntSetRange) Get() <-chan []int {
 	go func() {
 		defer close(realoutput)
 		if midway, ok := <-output; ok {
-			realoutput <- stringsToInts(midway)
+			ints, err := stringsToInts(midway)
+			if err != nil {
+				this.key.client.ErrCallback(err, "sorting ints")
+			}
+			realoutput <- ints
 		}
 	}()
 	return realoutput
@@ -217,7 +217,15 @@ func (this *SortedIntSetRange) GetWithScores() <-chan map[int]float64 {
 		if midway, ok := <-output; ok {
 			result := make(map[int]float64, len(midway))
 			for k, v := range midway {
-				result[atoi(k)] = atof(v)
+				index, err := atoi(k)
+				if err != nil {
+					this.key.client.ErrCallback(err, "sorting with scores (key)")
+				}
+
+				result[index], err = atof(v)
+				if err != nil {
+					this.key.client.ErrCallback(err, "sorting with scores (value)")
+				}
 			}
 			realoutput <- result
 		}

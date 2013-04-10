@@ -36,10 +36,14 @@ func (this IntSet) Members() <-chan []int {
 	this.Execute(command)
 	realoutput := make(chan []int, 1)
 	go func() {
+		defer close(realoutput)
 		if slice, ok := <-output; ok {
-			realoutput <- stringsToInts(slice)
+			ints, err := stringsToInts(slice)
+			if err != nil {
+				this.client.ErrCallback(err, "smembers")
+			}
+			realoutput <- ints
 		}
-		close(realoutput)
 	}()
 	return realoutput
 }
@@ -73,10 +77,14 @@ func (this IntSet) Intersection(otherSet IntSet) <-chan []int {
 	this.Execute(command)
 	realoutput := make(chan []int, 1)
 	go func() {
+		defer close(realoutput)
 		if slice, ok := <-output; ok {
-			realoutput <- stringsToInts(slice)
+			ints, err := stringsToInts(slice)
+			if err != nil {
+				this.client.ErrCallback(err, "sinter")
+			}
+			realoutput <- ints
 		}
-		close(realoutput)
 	}()
 	return realoutput
 }
@@ -86,10 +94,14 @@ func (this IntSet) Union(otherSet IntSet) <-chan []int {
 	this.Execute(command)
 	realoutput := make(chan []int, 1)
 	go func() {
+		defer close(realoutput)
 		if slice, ok := <-output; ok {
-			realoutput <- stringsToInts(slice)
+			ints, err := stringsToInts(slice)
+			if err != nil {
+				this.client.ErrCallback(err, "sunion")
+			}
+			realoutput <- ints
 		}
-		close(realoutput)
 	}()
 	return realoutput
 }
@@ -99,10 +111,14 @@ func (this IntSet) Difference(otherSet IntSet) <-chan []int {
 	this.Execute(command)
 	realoutput := make(chan []int, 1)
 	go func() {
+		defer close(realoutput)
 		if slice, ok := <-output; ok {
-			realoutput <- stringsToInts(slice)
+			ints, err := stringsToInts(slice)
+			if err != nil {
+				this.client.ErrCallback(err, "difference")
+			}
+			realoutput <- ints
 		}
-		close(realoutput)
 	}()
 	return realoutput
 }

@@ -3,22 +3,33 @@ package redis
 import ()
 
 type pipe struct {
-	commands []command
+	commands    []command
+	errCallback errCallback
 }
 
-func (this *pipe) Execute(command command) {
+func (this *pipe) Execute(command command) error {
 	this.commands = append(this.commands, command)
+	return nil
+}
+
+func (this *pipe) ErrCallback(err error, s string) {
+	this.errCallback(err, s)
 }
 
 func (this Client) piping(callback func(Executor), queued bool) {
 	p := new(pipe)
 	p.commands = make([]command, 0, 5)
+	p.errCallback = this.errCallback
 	defer func() {
 		var bundle []byte
 		for _, command := range p.commands {
-			bundle = append(bundle, buildCommand(command.arguments())...)
+			comm, err := buildCommand(command.arguments())
+			if err != nil {
+				this.errCallback(err, "piping")
+			}
+			bundle = append(bundle, comm...)
 		}
-		this.useConnection(func(c Connection) {
+		this.useConnection(func(c *Connection) {
 			c.Write(bundle)
 			if queued {
 				//get rid of all of the "queued" responses

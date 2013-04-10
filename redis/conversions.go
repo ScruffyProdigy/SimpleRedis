@@ -12,20 +12,20 @@ func itoa(i int) string {
 	return strconv.Itoa(i)
 }
 
-func atoi(s string) int {
+func atoi(s string) (int, error) {
 	i, e := strconv.ParseInt(s, 10, 64)
 	if e != nil {
-		panic(e.Error() + "\"" + s + "\"")
+		return 0, e
 	}
-	return int(i)
+	return int(i), nil
 }
 
-func atof(s string) float64 {
+func atof(s string) (float64, error) {
 	f, e := strconv.ParseFloat(s, 64)
 	if e != nil {
-		panic("Invalid Float")
+		return 0, e
 	}
-	return f
+	return f, nil
 }
 
 func intsToStrings(ints []int) []string {
@@ -36,12 +36,16 @@ func intsToStrings(ints []int) []string {
 	return strings
 }
 
-func stringsToInts(strings []string) []int {
+func stringsToInts(strings []string) ([]int, error) {
 	ints := make([]int, len(strings))
+	var err error
 	for i := range strings {
-		ints[i] = atoi(strings[i])
+		ints[i], err = atoi(strings[i])
+		if err != nil {
+			return nil, err
+		}
 	}
-	return ints
+	return ints, nil
 }
 
 func floatsToStrings(floats []float64) []string {
@@ -52,10 +56,14 @@ func floatsToStrings(floats []float64) []string {
 	return strings
 }
 
-func stringsToFloats(strings []string) []float64 {
+func stringsToFloats(strings []string) ([]float64, error) {
 	floats := make([]float64, len(strings))
+	var err error
 	for i := range strings {
-		floats[i] = atof(strings[i])
+		floats[i], err = atof(strings[i])
+		if err != nil {
+			return nil, err
+		}
 	}
-	return floats
+	return floats, nil
 }

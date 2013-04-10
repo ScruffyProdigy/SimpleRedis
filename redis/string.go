@@ -37,12 +37,11 @@ func (this String) Get() <-chan string {
 	return output
 }
 
-/*
-func (this String) Clear() (string, bool) {
+func (this String) Clear() <-chan string {
 	val := this.Get()
-	return val, this.Delete()
+	<-this.Delete()
+	return val
 }
-*/
 
 func (this String) Replace(val string) <-chan string {
 	command, output := newStringCommand(this.args("getset", val))

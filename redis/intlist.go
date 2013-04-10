@@ -67,10 +67,15 @@ func (this IntList) BlockUntilLeftPopWithTimeout(timeout int) <-chan int {
 	this.Execute(command)
 	realoutput := make(chan int, 1)
 	go func() {
+		defer close(realoutput)
 		if slice, ok := <-output; ok {
-			realoutput <- atoi(slice[1])
+			res, err := atoi(slice[1])
+			if err != nil {
+				this.client.ErrCallback(err, "blpop")
+				return
+			}
+			realoutput <- res
 		}
-		close(realoutput)
 	}()
 	return realoutput
 }
@@ -92,10 +97,14 @@ func (this IntList) BlockUntilRightPopWithTimeout(timeout int) <-chan int {
 	this.Execute(command)
 	realoutput := make(chan int, 1)
 	go func() {
+		defer close(realoutput)
 		if slice, ok := <-output; ok {
-			realoutput <- atoi(slice[1])
+			res, err := atoi(slice[1])
+			if err != nil {
+				this.client.ErrCallback(err, "brpop")
+			}
+			realoutput <- res
 		}
-		close(realoutput)
 	}()
 	return realoutput
 }
@@ -147,10 +156,14 @@ func (this IntList) GetFromRange(left, right int) <-chan []int {
 	this.Execute(command)
 	realoutput := make(chan []int, 1)
 	go func() {
+		defer close(realoutput)
 		if slice, ok := <-output; ok {
-			realoutput <- stringsToInts(slice)
+			ints, err := stringsToInts(slice)
+			if err != nil {
+				this.client.ErrCallback(err, "lrange")
+			}
+			realoutput <- ints
 		}
-		close(realoutput)
 	}()
 	return realoutput
 }

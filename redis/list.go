@@ -64,10 +64,10 @@ func (this List) BlockUntilLeftPopWithTimeout(timeout int) <-chan string {
 	this.Execute(command)
 	realoutput := make(chan string, 1)
 	go func() {
+		defer close(realoutput)
 		if slice, ok := <-output; ok {
 			realoutput <- slice[1]
 		}
-		close(realoutput)
 	}()
 	return realoutput
 }
@@ -87,10 +87,10 @@ func (this List) BlockUntilRightPopWithTimeout(timeout int) <-chan string {
 	this.Execute(command)
 	realoutput := make(chan string, 1)
 	go func() {
+		defer close(realoutput)
 		if slice, ok := <-output; ok {
 			realoutput <- slice[1]
 		}
-		close(realoutput)
 	}()
 	return realoutput
 }
