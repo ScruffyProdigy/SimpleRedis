@@ -20,13 +20,10 @@ func (this Bits) IsValid() <-chan bool {
 }
 
 func (this Bits) SetTo(index int, on bool) <-chan bool {
-	var bit int
 	if on {
-		bit = 1
+		return this.On(index)
 	}
-	command, output := newBoolCommand(this.args("setbit", itoa(index), itoa(bit)))
-	this.Execute(command)
-	return output
+	return this.Off(index)
 }
 
 func (this Bits) On(index int) <-chan bool {

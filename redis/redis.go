@@ -2,6 +2,7 @@ package redis
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"net"
 )
@@ -20,7 +21,7 @@ func DefaultConfiguration() Config {
 		NetAddress:      "127.0.0.1:6379",
 		DBid:            0,
 		Password:        "",
-		ConnectionCount: 1,
+		ConnectionCount: 10,
 	}
 }
 
@@ -32,6 +33,14 @@ type Connection struct {
 }
 
 type errCallback func(error, string)
+
+func (this errCallback) Call(e error, s string) {
+	if this == nil {
+		panic(errors.New(e.Error() + ":" + s))
+	} else {
+		this(e, s)
+	}
+}
 
 type Client struct {
 	pool        chan *Connection // 	a semaphore of connections to draw from when multiple threads want to connect
@@ -68,7 +77,9 @@ func Load(configfile io.Reader) (*Client, error) {
 }
 
 func (this *Client) SetErrorCallback(callback func(error, string)) {
-	this.errCallback = callback
+	print("Setting Callback\n")
+	this.errCallback = errCallback(callback)
+	print("Callback Set")
 }
 
 func (this *Client) newConnection() (*Connection, error) {
@@ -76,6 +87,8 @@ func (this *Client) newConnection() (*Connection, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	//TODO: Make password and DBids work
 
 	if this.config.Password != "" {
 		//		this.UsePassword(config.Password).WithConn(conn)
@@ -100,7 +113,7 @@ func (this *Client) useConnection(callback func(*Connection)) {
 func (this *Client) useNewConnection(callback func(*Connection)) {
 	conn, err := this.newConnection()
 	if err != nil {
-		this.errCallback(err, "new connection")
+		this.errCallback.Call(err, "new connection")
 	}
 
 	defer func() {
@@ -124,6 +137,10 @@ func (this *Client) Integer(key string) Integer {
 
 func (this *Client) Float(key string) Float {
 	return newFloat(this, key)
+}
+
+func (this *Client) Bits(key string) Bits {
+	return newBits(this, key)
 }
 
 func (this *Client) Hash(key string) Hash {

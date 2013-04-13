@@ -5,6 +5,7 @@ type Prefix interface {
 	String(key string) String
 	Integer(key string) Integer
 	Float(key string) Float
+	Bits(key string) Bits
 	Hash(key string) Hash
 	List(key string) List
 	IntList(key string) IntList
@@ -41,6 +42,10 @@ func (this *prefix) Integer(key string) Integer {
 
 func (this *prefix) Float(key string) Float {
 	return this.parent.Float(this.root + key)
+}
+
+func (this *prefix) Bits(key string) Bits {
+	return this.parent.Bits(this.root + key)
 }
 
 func (this *prefix) Hash(key string) Hash {

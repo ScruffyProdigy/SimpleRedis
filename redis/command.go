@@ -16,13 +16,12 @@ type response struct {
 }
 
 const (
-	isMultibulk    = '*'
-	isBulk         = '$'
-	isInt          = ':'
-	isStatus       = '+'
-	isError        = '-'
-	bufferSize     = 16 //should be enough to read any line that we don't know the size of
-	longBufferSize = 200
+	isMultibulk = '*'
+	isBulk      = '$'
+	isInt       = ':'
+	isStatus    = '+'
+	isError     = '-'
+	bufferSize  = 200
 )
 
 var (
@@ -44,18 +43,15 @@ func (this Client) Execute(command command) error {
 		err := conn.Execute(command)
 		if err != nil {
 			// we are in a separate routine and cannot return the error
-			// instead we are going to try to use an error callback if it exists, otherwise, we will panic
-			if this.errCallback == nil {
-				panic(err)
-			}
-			this.errCallback(err, strings.Join(command.arguments(), " "))
+			// use the callback instead
+			this.errCallback.Call(err, strings.Join(command.arguments(), " "))
 		}
 	})
 	return nil
 }
 
 func (this Client) ErrCallback(e error, s string) {
-	this.errCallback(e, s)
+	this.errCallback.Call(e, s)
 }
 
 func (this Connection) input(command command) error {
@@ -134,13 +130,20 @@ func getResponse(conn io.Reader) (*response, error) {
 	}
 	switch buffer[0] {
 	case isError:
-		return nil, err
+		errString, err := getString(conn)
+		if err != nil {
+			return nil, err
+		}
+
+		return nil, errors.New(errString)
 	case isStatus, isInt:
 		return getStringResponse(conn)
 	case isBulk:
 		return getBulk(conn)
 	case isMultibulk:
 		return getMultiBulk(conn)
+	default:
+		return nil, errors.New("Unknown Data Type:'" + string(buffer[0:1]) + "'")
 	}
 	return nil, errors.New("unexpected data")
 }
@@ -154,25 +157,7 @@ func getString(conn io.Reader) (string, error) {
 			return string(buffer[:j]), nil
 		}
 		if i >= bufferSize {
-			return "", errors.New("Short Buffer")
-		}
-		conn.Read(buffer[i : i+1])
-		i++
-		j++
-	}
-	return string(buffer[:]), nil
-}
-
-func getLongString(conn io.Reader) (string, error) {
-	var buffer [longBufferSize]byte
-	j := -len(delimiter)
-	i := 0
-	for {
-		if j >= 0 && bytes.Equal(buffer[j:i], delimiter) {
-			return string(buffer[:j]), nil
-		}
-		if i >= bufferSize {
-			return "", errors.New("Short Buffer")
+			return "", errors.New("Short Buffer - " + string(buffer[:]))
 		}
 		conn.Read(buffer[i : i+1])
 		i++

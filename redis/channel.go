@@ -55,7 +55,7 @@ func messageLoop(conn *Connection, errCallback errCallback) <-chan string {
 		for working {
 			response, err := getResponse(conn)
 			if err != nil {
-				errCallback(err, "Message Loop Error")
+				errCallback.Call(err, "Message Loop Error")
 				working = false
 			}
 
@@ -64,6 +64,8 @@ func messageLoop(conn *Connection, errCallback errCallback) <-chan string {
 				working = false
 			case "message":
 				output <- response.subresponses[2].val
+			case "pmessage":
+				output <- response.subresponses[3].val
 			}
 		}
 	}()

@@ -13,7 +13,7 @@ func (this *pipe) Execute(command command) error {
 }
 
 func (this *pipe) ErrCallback(err error, s string) {
-	this.errCallback(err, s)
+	this.errCallback.Call(err, s)
 }
 
 func (this Client) piping(callback func(Executor), queued bool) {
@@ -25,7 +25,7 @@ func (this Client) piping(callback func(Executor), queued bool) {
 		for _, command := range p.commands {
 			comm, err := buildCommand(command.arguments())
 			if err != nil {
-				this.errCallback(err, "piping")
+				this.errCallback.Call(err, "piping")
 			}
 			bundle = append(bundle, comm...)
 		}

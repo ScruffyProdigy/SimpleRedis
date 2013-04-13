@@ -101,8 +101,8 @@ func (this List) Index(index int) <-chan string {
 	return output
 }
 
-func (this List) Remove(items ...string) <-chan int {
-	command, output := newIntCommand(this.args("lrem", append([]string{"0"}, items...)...))
+func (this List) Remove(item string) <-chan int {
+	command, output := newIntCommand(this.args("lrem", "0", item))
 	this.Execute(command)
 	return output
 }
@@ -165,7 +165,7 @@ func (this List) BlockUntilMoveLastItemToListWithTimeout(newList List, timeout i
 	return output
 }
 
-func (this List) Sort() Sorter {
+func (this List) Sort() Sorter { //
 	return Sorter{key: this.Key}
 }
 
