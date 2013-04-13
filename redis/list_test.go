@@ -78,7 +78,7 @@ func TestLists(t *testing.T) {
 	}
 
 	/*//	Currently this throws an error, TODO: make this work (not sure if can easily)
-	if _,ok := <-list.Set(10,""); ok {
+	if _,ok := <-list.Set(10,"L"); ok {
 		t.Error("Should not work")
 	}
 	*/
@@ -173,6 +173,8 @@ func TestLists(t *testing.T) {
 	print(".")
 
 	otherlist := r.List("Other_Test_List")
+	<-otherlist.Delete()
+
 	if _, ok := <-list.MoveLastItemToList(otherlist); ok {
 		t.Error("RPOPLPUSH - Should not have any items to move")
 	}
@@ -197,6 +199,9 @@ func TestLists(t *testing.T) {
 		if res != "R" {
 			t.Error("BRPOPLPUSH - Should get R, not", res)
 		}
+		if <-otherlist.Index(-2) != "R" {
+			t.Error("RPOPLPUSH - Never received R in new list")
+		}
 	case <-time.After(2 * time.Second):
 		t.Error("BRPOPLPUSH - didn't receive anything after 2 seconds")
 	}
@@ -208,8 +213,13 @@ func TestLists(t *testing.T) {
 	if res, ok := <-list.BlockUntilMoveLastItemToListWithTimeout(otherlist, 2); !ok || res != "S" {
 		if !ok {
 			t.Error("BRPOPLPUSH - didn't receive anything after 2 seconds")
-		} else if res != "S" {
-			t.Error("BRPOPLPUSH - should get S, not", res)
+		} else {
+			if res != "S" {
+				t.Error("BRPOPLPUSH - should get S, not", res)
+			}
+			if <-otherlist.Index(-3) != "S" {
+				t.Error("RPOPLPUSH - Never received S in new list")
+			}
 		}
 	}
 	print(".\n")
