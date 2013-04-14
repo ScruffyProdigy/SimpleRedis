@@ -72,10 +72,10 @@ func TestFloatSets(t *testing.T) {
 			t.Error("There should only be", 2-i, "items left")
 		}
 	}
-	
+
 	otherset := r.FloatSet("Other_Test_FloatSet")
 	<-otherset.Delete()
-	
+
 	a = set.Add(.1)
 	b = set.Add(.2)
 	c = otherset.Add(.1)
@@ -84,138 +84,137 @@ func TestFloatSets(t *testing.T) {
 	<-b
 	<-c
 	<-d
-	
+
 	done := make(chan bool)
-	
-	go func(){
+
+	go func() {
 		res := <-set.Intersection(otherset)
 		if len(res) != 1 {
-			t.Error("There should only be 1 item in the intersection, not",res)
+			t.Error("There should only be 1 item in the intersection, not", res)
 		}
 		if len(res) == 1 && res[0] != .1 {
 			t.Error(".1 should be in the intersection of the sets")
 		}
-		
+
 		done <- true
 	}()
-	
-	go func(){
+
+	go func() {
 		res := <-set.Union(otherset)
 		if len(res) != 3 {
-			t.Error("There should be 3 items in the union, not", len(res),":",res)
+			t.Error("There should be 3 items in the union, not", len(res), ":", res)
 		}
 		if len(res) == 3 && res[0] != .1 && res[1] != .1 && res[2] != .1 {
-			t.Error(".1 should be in the union of the sets:",res)
+			t.Error(".1 should be in the union of the sets:", res)
 		}
 		if len(res) == 3 && res[0] != .2 && res[1] != .2 && res[2] != .2 {
-			t.Error(".2 should be in the union of the sets:",res)
+			t.Error(".2 should be in the union of the sets:", res)
 		}
 		if len(res) == 3 && res[0] != .3 && res[1] != .3 && res[2] != .3 {
-			t.Error(".3 should be in the union of the sets:",res)
+			t.Error(".3 should be in the union of the sets:", res)
 		}
-		
+
 		done <- true
 	}()
-	
-	go func(){
+
+	go func() {
 		res := <-set.Difference(otherset)
 		if len(res) != 1 {
-			t.Error("There should only be 1 item in the difference, not", len(res),":",res)
+			t.Error("There should only be 1 item in the difference, not", len(res), ":", res)
 		}
 		if len(res) == 1 && res[0] != .2 {
-			t.Error("2 should be in the difference of the sets:",res)
+			t.Error("2 should be in the difference of the sets:", res)
 		}
-		
+
 		done <- true
 	}()
-	
-	go func(){
+
+	go func() {
 		inter := r.FloatSet("Intersection_FloatSet")
-		
-		if res := <-inter.StoreIntersectionOf(set,otherset); res != 1 {
-			t.Error("There should only be 1 item in the intersection, not",res)
+
+		if res := <-inter.StoreIntersectionOf(set, otherset); res != 1 {
+			t.Error("There should only be 1 item in the intersection, not", res)
 		}
-		
+
 		res := <-inter.Members()
 		if len(res) != 1 {
-			t.Error("Result slice should have 1 item, not",len(res))
+			t.Error("Result slice should have 1 item, not", len(res))
 		}
 		if len(res) == 1 && res[0] != .1 {
-			t.Error("1 should be in the intersection of the sets:",res)
+			t.Error("1 should be in the intersection of the sets:", res)
 		}
-		
+
 		done <- true
 	}()
-	
-	go func(){
+
+	go func() {
 		union := r.FloatSet("Union_FloatSet")
-		
-		if res := <-union.StoreUnionOf(set,otherset); res != 3 {
-			t.Error("There should be 3 items in the union, not",res)
+
+		if res := <-union.StoreUnionOf(set, otherset); res != 3 {
+			t.Error("There should be 3 items in the union, not", res)
 		}
-		
+
 		res := <-union.Members()
 		if len(res) != 3 {
-			t.Error("Result slice should have 3 members, not",len(res))
+			t.Error("Result slice should have 3 members, not", len(res))
 		}
 		if len(res) == 3 && res[0] != .1 && res[1] != .1 && res[2] != .1 {
-			t.Error(".1 should be in the union of the sets:",res)
+			t.Error(".1 should be in the union of the sets:", res)
 		}
 		if len(res) == 3 && res[0] != .2 && res[1] != .2 && res[2] != .2 {
-			t.Error(".2 should be in the union of the sets:",res)
+			t.Error(".2 should be in the union of the sets:", res)
 		}
 		if len(res) == 3 && res[0] != .3 && res[1] != .3 && res[2] != .3 {
-			t.Error(".3 should be in the union of the sets:",res)
+			t.Error(".3 should be in the union of the sets:", res)
 		}
-		
+
 		done <- true
 	}()
-	
-	go func(){
+
+	go func() {
 		diff := r.FloatSet("Diff_FloatSet")
-		
-		if res := <-diff.StoreDifferenceOf(set,otherset);res != 1 {
-			t.Error("There should only be 1 item in the difference, not",res)
+
+		if res := <-diff.StoreDifferenceOf(set, otherset); res != 1 {
+			t.Error("There should only be 1 item in the difference, not", res)
 		}
-		
+
 		res := <-diff.Members()
 		if len(res) != 1 {
-			t.Error("Result slice should have 1 member, not",len(res))
+			t.Error("Result slice should have 1 member, not", len(res))
 		}
 		if len(res) == 1 && res[0] != .2 {
-			t.Error(".2 should be in the difference of the sets:",res)
+			t.Error(".2 should be in the difference of the sets:", res)
 		}
-		
+
 		done <- true
 	}()
-	
-	for i := 0; i < 6;i++ {
+
+	for i := 0; i < 6; i++ {
 		<-done
 	}
-	
-	
-	if !<-set.MoveMemberTo(otherset,.2) {
+
+	if !<-set.MoveMemberTo(otherset, .2) {
 		t.Error("Should be able to move .2")
 	}
-	
+
 	if res := <-otherset.Size(); res != 3 {
 		t.Error("There should now be 3 members in the other set")
 	}
-	
+
 	if res := <-set.Size(); res != 1 {
 		t.Error("There should now only be 1 member in the base set")
 	}
 
-	if <-set.MoveMemberTo(otherset,.3) {
+	if <-set.MoveMemberTo(otherset, .3) {
 		t.Error("Should not be able to move .3 (as it doesn't exist in the base set)")
 	}
-	
-	if !<-set.MoveMemberTo(otherset,.1) {
+
+	if !<-set.MoveMemberTo(otherset, .1) {
 		t.Error("Should be able to move .1 (even though it is already in the other set)")
 	}
-	
+
 	if res := <-set.Size(); res != 0 {
 		t.Error("There should now be no more members in the base set")
 	}
-	
+
 }
