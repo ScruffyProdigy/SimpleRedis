@@ -107,7 +107,7 @@ func (this IntSet) Union(otherSet IntSet) <-chan []int {
 }
 
 func (this IntSet) Difference(otherSet IntSet) <-chan []int {
-	command, output := newSliceCommand(this.args("difference", otherSet.key))
+	command, output := newSliceCommand(this.args("sdiff", otherSet.key))
 	this.Execute(command)
 	realoutput := make(chan []int, 1)
 	go func() {
@@ -115,7 +115,7 @@ func (this IntSet) Difference(otherSet IntSet) <-chan []int {
 		if slice, ok := <-output; ok {
 			ints, err := stringsToInts(slice)
 			if err != nil {
-				this.client.ErrCallback(err, "difference")
+				this.client.ErrCallback(err, "sdiff")
 			}
 			realoutput <- ints
 		}
@@ -123,20 +123,20 @@ func (this IntSet) Difference(otherSet IntSet) <-chan []int {
 	return realoutput
 }
 
-func (this IntSet) StoreIntersectionIn(newSet IntSet, otherSet IntSet) <-chan int {
-	command, output := newIntCommand(this.args("sinterstore", newSet.key, otherSet.key))
+func (this IntSet) StoreIntersectionOf(setA IntSet, setB IntSet) <-chan int {
+	command, output := newIntCommand(this.args("sinterstore", setA.key, setB.key))
 	this.Execute(command)
 	return output
 }
 
-func (this IntSet) StoreUnionIn(newSet IntSet, otherSet IntSet) <-chan int {
-	command, output := newIntCommand(this.args("sunionstore", newSet.key, otherSet.key))
+func (this IntSet) StoreUnionOf(setA IntSet, setB IntSet) <-chan int {
+	command, output := newIntCommand(this.args("sunionstore", setA.key, setB.key))
 	this.Execute(command)
 	return output
 }
 
-func (this IntSet) StoreDifferenceIn(newSet IntSet, otherSet IntSet) <-chan int {
-	command, output := newIntCommand(this.args("sdiffstore", newSet.key, otherSet.key))
+func (this IntSet) StoreDifferenceOf(setA IntSet, setB IntSet) <-chan int {
+	command, output := newIntCommand(this.args("sdiffstore", setA.key, setB.key))
 	this.Execute(command)
 	return output
 }
