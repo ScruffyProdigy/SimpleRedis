@@ -21,7 +21,7 @@ func DefaultConfiguration() Config {
 		NetAddress:      "127.0.0.1:6379",
 		DBid:            0,
 		Password:        "",
-		ConnectionCount: 10,
+		ConnectionCount: 100,
 	}
 }
 
@@ -43,9 +43,11 @@ func (this errCallback) Call(e error, s string) {
 }
 
 type Client struct {
-	pool        chan *Connection // 	a semaphore of connections to draw from when multiple threads want to connect
-	config      Config           //	connection details, so we know how to connect to redis
-	errCallback errCallback      //	a callback function - since we operate in a separate goroutine, we can't return an error, instead we call this function sending it the error, and the command we tried to issue
+	isClosed    bool
+	pool        chan *Connection     // 	a semaphore of connections to draw from when multiple threads want to connect
+	used        map[*Connection]bool //a set of all connections currently being used
+	config      Config               //	connection details, so we know how to connect to redis
+	errCallback errCallback          //	a callback function - since we operate in a separate goroutine, we can't return an error, instead we call this function sending it the error, and the command we tried to issue
 }
 
 func New(config Config) (*Client, error) {
@@ -62,6 +64,8 @@ func New(config Config) (*Client, error) {
 		this.pool <- conn
 	}
 
+	this.used = make(map[*Connection]bool)
+
 	return this, nil
 }
 
@@ -76,10 +80,24 @@ func Load(configfile io.Reader) (*Client, error) {
 	return New(config)
 }
 
+func (this *Client) Close() {
+	if this.isClosed {
+		return
+	}
+	this.isClosed = true
+
+	close(this.pool)
+	for conn := range this.pool {
+		conn.Close()
+	}
+
+	for conn, _ := range this.used {
+		conn.Close()
+	}
+}
+
 func (this *Client) SetErrorCallback(callback func(error, string)) {
-	print("Setting Callback\n")
 	this.errCallback = errCallback(callback)
-	print("Callback Set")
 }
 
 func (this *Client) newConnection() (*Connection, error) {
@@ -102,8 +120,14 @@ func (this *Client) newConnection() (*Connection, error) {
 }
 
 func (this *Client) useConnection(callback func(*Connection)) {
+	if this.isClosed {
+		return
+	}
+
 	conn := <-this.pool
+	this.used[conn] = true
 	defer func() {
+		delete(this.used, conn)
 		this.pool <- conn
 	}()
 

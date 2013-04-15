@@ -10,6 +10,7 @@ func TestIntLists(t *testing.T) {
 	if err != nil {
 		t.Fatal("Can't load redis")
 	}
+	defer r.Close()
 
 	list := r.IntList("Test_IntList")
 

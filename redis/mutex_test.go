@@ -10,15 +10,24 @@ func TestMutex(t *testing.T) {
 	if err != nil {
 		t.Fatal("Can't load redis")
 	}
+	defer r.Close()
 
 	m := r.Mutex("Test_Mutex")
 
 	usage := 0
+	j := 0
 
 	done := make(chan bool)
 
 	for i := 0; i < 10; i++ {
 		go func() {
+			defer func() {
+				if rec := recover(); rec != nil {
+					if rec.(int) != 5 {
+						panic(rec)
+					}
+				}
+			}()
 			m.Force(func() {
 				usage++
 
@@ -30,6 +39,11 @@ func TestMutex(t *testing.T) {
 
 				usage--
 				done <- true
+
+				j++
+				if j%2 != 0 {
+					panic(5) // make sure panic's don't eat up resources
+				}
 			})
 		}()
 	}
@@ -77,15 +91,24 @@ func TestSemaphore(t *testing.T) {
 	if err != nil {
 		t.Fatal("Can't load redis")
 	}
+	defer r.Close()
 
 	m := r.Semaphore("Test_Semaphore", 3)
 
 	usage := 0
+	j := 0
 
 	done := make(chan bool)
 
 	for i := 0; i < 10; i++ {
 		go func() {
+			defer func() {
+				if rec := recover(); rec != nil {
+					if rec.(int) != 5 {
+						panic(rec)
+					}
+				}
+			}()
 			m.Force(func() {
 				usage++
 
@@ -97,6 +120,12 @@ func TestSemaphore(t *testing.T) {
 
 				usage--
 				done <- true
+
+				j++
+				if j%2 != 0 {
+					panic(5) // make sure panic's don't eat up resources
+				}
+
 			})
 		}()
 	}

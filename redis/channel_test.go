@@ -11,6 +11,7 @@ func TestChannels(t *testing.T) {
 	if err != nil {
 		t.Fatal("Can't load redis")
 	}
+	defer r.Close()
 
 	messages := make(chan string)
 
@@ -71,4 +72,5 @@ func TestChannels(t *testing.T) {
 			return
 		}
 	}
+
 }

@@ -9,6 +9,7 @@ func TestBitsFuncs(t *testing.T) {
 	if err != nil {
 		t.Fatal("Can't load redis")
 	}
+	defer r.Close()
 
 	b := r.Bits("Test_Bits")
 
@@ -116,4 +117,5 @@ func TestBitsFuncs(t *testing.T) {
 	if !<-c.Get(3) {
 		t.Error("3rd bit should be set")
 	}
+
 }

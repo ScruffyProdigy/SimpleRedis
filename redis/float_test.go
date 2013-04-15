@@ -9,6 +9,7 @@ func TestFloatFuncs(t *testing.T) {
 	if err != nil {
 		t.Fatal("Can't load redis")
 	}
+	defer r.Close()
 
 	f := r.Float("Test_Float")
 
@@ -43,4 +44,5 @@ func TestFloatFuncs(t *testing.T) {
 	if <-f.DecrementBy(1.1) != 3.5 {
 		t.Error("Decrement by 1.1 from 4.6 should give 3.5")
 	}
+
 }

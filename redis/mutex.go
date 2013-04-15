@@ -39,7 +39,7 @@ func (this *redisMutex) Try(action func()) bool {
 	}
 
 	defer func() {
-		this.processes.RightPush(val)
+		<-this.processes.RightPush(val)
 	}()
 
 	action()
@@ -51,7 +51,7 @@ func (this *redisMutex) Force(action func()) {
 	val := <-this.processes.BlockUntilLeftPop()
 
 	defer func() {
-		this.processes.RightPush(val)
+		<-this.processes.RightPush(val)
 	}()
 
 	action()

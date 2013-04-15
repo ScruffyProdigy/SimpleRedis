@@ -10,6 +10,7 @@ func TestLists(t *testing.T) {
 	if err != nil {
 		t.Fatal("Can't load redis")
 	}
+	defer r.Close()
 
 	list := r.List("Test_List")
 

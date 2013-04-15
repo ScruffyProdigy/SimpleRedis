@@ -9,6 +9,7 @@ func TestIntFuncs(t *testing.T) {
 	if err != nil {
 		t.Fatal("Can't Load Redis")
 	}
+	defer r.Close()
 
 	i := r.Integer("Test_Integer")
 
@@ -59,4 +60,5 @@ func TestIntFuncs(t *testing.T) {
 	if <-i.DecrementBy(2) != 7 {
 		t.Error("DecrementBy 2 should give you 2 less than before")
 	}
+
 }

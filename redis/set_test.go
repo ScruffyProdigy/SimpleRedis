@@ -9,6 +9,7 @@ func TestSets(t *testing.T) {
 	if err != nil {
 		t.Fatal("Can't load redis")
 	}
+	defer r.Close()
 
 	set := r.Set("Test_Set")
 	<-set.Delete()
@@ -216,5 +217,4 @@ func TestSets(t *testing.T) {
 	if res := <-set.Size(); res != 0 {
 		t.Error("There should now be no more members in the base set")
 	}
-
 }

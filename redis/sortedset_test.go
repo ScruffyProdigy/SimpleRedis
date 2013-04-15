@@ -9,6 +9,7 @@ func TestSortedSets(t *testing.T) {
 	if err != nil {
 		t.Fatal("Can't load redis")
 	}
+	defer r.Close()
 
 	ss := r.SortedSet("Test_SortedSetTest")
 	ss.Delete()
@@ -369,4 +370,5 @@ func TestSortedSets(t *testing.T) {
 	for i := 0; i < 8; i++ {
 		<-done
 	}
+
 }

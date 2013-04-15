@@ -9,6 +9,7 @@ func TestFloatSets(t *testing.T) {
 	if err != nil {
 		t.Fatal("Can't load redis")
 	}
+	defer r.Close()
 
 	set := r.FloatSet("Test_FloatSet")
 	<-set.Delete()
@@ -216,5 +217,7 @@ func TestFloatSets(t *testing.T) {
 	if res := <-set.Size(); res != 0 {
 		t.Error("There should now be no more members in the base set")
 	}
+
+	r.Close()
 
 }

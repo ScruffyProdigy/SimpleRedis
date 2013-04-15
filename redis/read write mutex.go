@@ -12,17 +12,27 @@ type writeMutex struct {
 }
 
 func lockAllReads(rw *ReadWriteMutex, finalAction func()) func() {
-	i := 0
-	var lockNextRead func()
-	lockNextRead = func() {
-		if i < rw.readers {
-			i++
-			rw.Read.Force(lockNextRead)
-		} else {
-			finalAction()
+	return func() {
+		in := make(chan bool)
+		out := make(chan bool)
+		for i := 0; i < rw.readers; i++ {
+			go func(j int) {
+				rw.Read.Force(func() {
+					in <- true
+					<-out //this one is here to make sure the final action has been completed before releasing any of the readers
+				})
+				<-out //this one is here to make sure all of the readers have been released before returning control to the calling function
+			}(i)
+		}
+
+		for i := 0; i < rw.readers; i++ {
+			<-in
+		}
+		finalAction()
+		for i := 0; i < 2*rw.readers; i++ {
+			out <- true
 		}
 	}
-	return lockNextRead
 }
 
 func (this writeMutex) Try(action func()) bool {

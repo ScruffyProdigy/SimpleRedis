@@ -9,6 +9,7 @@ func TestSortedFloatSets(t *testing.T) {
 	if err != nil {
 		t.Fatal("Can't load redis")
 	}
+	defer r.Close()
 
 	ss := r.SortedFloatSet("Test_SortedFloatSet")
 	ss.Delete()

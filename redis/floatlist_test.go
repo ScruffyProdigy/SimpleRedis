@@ -10,6 +10,7 @@ func TestFloatLists(t *testing.T) {
 	if err != nil {
 		t.Fatal("Can't load redis")
 	}
+	defer r.Close()
 
 	list := r.FloatList("Test_FloatList")
 
@@ -215,4 +216,5 @@ func TestFloatLists(t *testing.T) {
 		}
 	}
 	print(".\n")
+
 }

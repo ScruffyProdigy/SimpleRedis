@@ -9,6 +9,7 @@ func TestStringFuncs(t *testing.T) {
 	if err != nil {
 		t.Fatal("Can't Load Redis")
 	}
+	defer r.Close()
 
 	s := r.String("Test_String")
 
@@ -53,4 +54,5 @@ func TestStringFuncs(t *testing.T) {
 	if <-s.Length() != 9 {
 		t.Error("Length incorrect")
 	}
+
 }
