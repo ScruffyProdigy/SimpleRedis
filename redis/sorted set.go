@@ -275,10 +275,10 @@ func (this *SortedSetCombo) UseCombinedScores() <-chan int {
 
 func (this *SortedSetCombo) args(mode string) []string {
 	result := make([]string, 1, 11)
+	result[0] = itoa(len(this.sets))
+
 	weights := make([]string, 1, 3)
 	weights[0] = "WEIGHTS"
-
-	result[0] = itoa(len(this.sets))
 
 	for set, weight := range this.sets {
 		result = append(result, set)
