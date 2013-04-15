@@ -73,6 +73,12 @@ func (this SortedSet) ReverseIndexedBetween(start, stop int) <-chan []string {
 	return output
 }
 
+func (this SortedSet) RemoveIndexedBetween(start, stop int) <-chan int {
+	command, output := newIntCommand(this.args("zremrangebyrank", itoa(start), itoa(stop)))
+	this.Execute(command)
+	return output
+}
+
 type SortedSetRange struct {
 	min, max      string
 	fmin, fmax    float64
@@ -92,33 +98,33 @@ func (this SortedSet) Scores() *SortedSetRange {
 }
 
 func (this *SortedSetRange) Above(min float64) *SortedSetRange {
-	if this.min == "-inf" || this.fmin >= min {
-		this.fmin = min
-		this.min = ftoa(min)
-	}
-	return this
-}
-
-func (this *SortedSetRange) Below(max float64) *SortedSetRange {
-	if this.max == "+inf" || this.fmax <= max {
-		this.fmax = max
-		this.max = ftoa(max)
-	}
-	return this
-}
-
-func (this *SortedSetRange) AboveOrEqualTo(min float64) *SortedSetRange {
-	if this.min == "-inf" || this.fmin > min {
+	if this.min == "-inf" || this.fmin <= min {
 		this.fmin = min
 		this.min = "(" + ftoa(min)
 	}
 	return this
 }
 
-func (this *SortedSetRange) BelowOrEqualTo(max float64) *SortedSetRange {
-	if this.max == "+inf" || this.fmax < max {
+func (this *SortedSetRange) Below(max float64) *SortedSetRange {
+	if this.max == "+inf" || this.fmax >= max {
 		this.fmax = max
 		this.max = "(" + ftoa(max)
+	}
+	return this
+}
+
+func (this *SortedSetRange) AboveOrEqualTo(min float64) *SortedSetRange {
+	if this.min == "-inf" || this.fmin < min {
+		this.fmin = min
+		this.min = ftoa(min)
+	}
+	return this
+}
+
+func (this *SortedSetRange) BelowOrEqualTo(max float64) *SortedSetRange {
+	if this.max == "+inf" || this.fmax > max {
+		this.fmax = max
+		this.max = ftoa(max)
 	}
 	return this
 }
@@ -144,22 +150,28 @@ func (this *SortedSetRange) Count() <-chan int {
 }
 
 func (this *SortedSetRange) Remove() <-chan int {
-	command, output := newIntCommand(this.key.args("zremrangebyrank", this.min, this.max))
+	command, output := newIntCommand(this.key.args("zremrangebyscore", this.min, this.max))
 	this.key.Execute(command)
 	return output
 }
 
 func (this *SortedSetRange) Get() <-chan []string {
 	op := "zrangebyscore"
+	args := make([]string, 2, 5)
+
 	if this.reversed {
 		op = "zrevrangebyscore"
+		args[0] = this.max
+		args[1] = this.min
+	} else {
+		args[0] = this.min
+		args[1] = this.max
 	}
-	args := make([]string, 2, 5)
-	args[0] = this.min
-	args[1] = this.max
+
 	if this.limited {
 		args = append(args, "LIMIT", itoa(this.offset), itoa(this.count))
 	}
+
 	command, output := newSliceCommand(this.key.args(op, args...))
 	this.key.Execute(command)
 	return output
@@ -167,15 +179,23 @@ func (this *SortedSetRange) Get() <-chan []string {
 
 func (this *SortedSetRange) GetWithScores() <-chan map[string]float64 {
 	op := "zrangebyscore"
+	args := make([]string, 3, 6)
+
 	if this.reversed {
 		op = "zrevrangebyscore"
+		args[0] = this.max
+		args[1] = this.min
+	} else {
+		args[0] = this.min
+		args[1] = this.max
 	}
-	args := make([]string, 2, 6)
-	args[0] = this.min
-	args[1] = this.max
+
+	args[2] = "WITHSCORES"
+
 	if this.limited {
-		args = append(args, "WITHSCORES", "LIMIT", itoa(this.offset), itoa(this.count))
+		args = append(args, "LIMIT", itoa(this.offset), itoa(this.count))
 	}
+
 	command, output := newMapCommand(this.key.args(op, args...))
 	this.key.Execute(command)
 	realoutput := make(chan map[string]float64, 1)
@@ -199,7 +219,6 @@ func (this *SortedSetRange) GetWithScores() <-chan map[string]float64 {
 type SortedSetCombo struct {
 	weighted bool
 	op       string //either Union or Intersection
-	mode     string //either Min, Max, or Sum
 	sets     map[string]float64
 
 	key Key
@@ -255,19 +274,25 @@ func (this *SortedSetCombo) UseCombinedScores() <-chan int {
 }
 
 func (this *SortedSetCombo) args(mode string) []string {
-	result := make([]string, 0, 10)
-	weights := make([]string, 0, 2)
+	result := make([]string, 1, 11)
+	weights := make([]string, 1, 3)
+	weights[0] = "WEIGHTS"
+
+	result[0] = itoa(len(this.sets))
+
 	for set, weight := range this.sets {
 		result = append(result, set)
 		weights = append(weights, ftoa(weight))
 	}
+
 	if this.weighted {
-		result = append(result, "WEIGHTS")
 		result = append(result, weights...)
 	}
+
 	if mode != "SUM" {
 		result = append(result, "AGGREGATE", mode)
 	}
+
 	return this.key.args(this.op, result...)
 }
 
