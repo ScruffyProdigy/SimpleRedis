@@ -180,7 +180,7 @@ func (this *SortedIntSetRange) Remove() <-chan int {
 func (this *SortedIntSetRange) Get() <-chan []int {
 	op := "zrangebyscore"
 	args := make([]string, 2, 5)
-	
+
 	if this.reversed {
 		op = "zrevrangebyscore"
 		args[0] = this.max
@@ -189,14 +189,14 @@ func (this *SortedIntSetRange) Get() <-chan []int {
 		args[0] = this.min
 		args[1] = this.max
 	}
-	
+
 	if this.limited {
 		args = append(args, "LIMIT", itoa(this.offset), itoa(this.count))
 	}
-	
+
 	command, output := newSliceCommand(this.key.args(op, args...))
 	this.key.Execute(command)
-	
+
 	realoutput := make(chan []int, 1)
 	go func() {
 		defer close(realoutput)
@@ -208,14 +208,14 @@ func (this *SortedIntSetRange) Get() <-chan []int {
 			realoutput <- ints
 		}
 	}()
-	
+
 	return realoutput
 }
 
 func (this *SortedIntSetRange) GetWithScores() <-chan map[int]float64 {
 	op := "zrangebyscore"
 	args := make([]string, 3, 6)
-	
+
 	if this.reversed {
 		op = "zrevrangebyscore"
 		args[0] = this.max
@@ -224,13 +224,13 @@ func (this *SortedIntSetRange) GetWithScores() <-chan map[int]float64 {
 		args[0] = this.min
 		args[1] = this.max
 	}
-	
+
 	args[2] = "WITHSCORES"
-	
+
 	if this.limited {
 		args = append(args, "LIMIT", itoa(this.offset), itoa(this.count))
 	}
-	
+
 	command, output := newMapCommand(this.key.args(op, args...))
 	this.key.Execute(command)
 
@@ -317,23 +317,23 @@ func (this *SortedIntSetCombo) UseCombinedScores() <-chan int {
 func (this *SortedIntSetCombo) args(mode string) []string {
 	result := make([]string, 1, 11)
 	result[0] = itoa(len(this.sets))
-	
+
 	weights := make([]string, 1, 3)
 	weights[0] = "WEIGHTS"
-	
+
 	for set, weight := range this.sets {
 		result = append(result, set)
 		weights = append(weights, ftoa(weight))
 	}
-	
+
 	if this.weighted {
 		result = append(result, weights...)
 	}
-	
+
 	if mode != "SUM" {
 		result = append(result, "AGGREGATE", mode)
 	}
-	
+
 	return this.key.args(this.op, result...)
 }
 

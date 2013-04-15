@@ -102,8 +102,6 @@ func (this SortedFloatSet) RemoveIndexedBetween(start, stop int) <-chan int {
 	return output
 }
 
-
-
 type SortedFloatSetRange struct {
 	min, max      string
 	fmin, fmax    float64
@@ -183,23 +181,23 @@ func (this *SortedFloatSetRange) Remove() <-chan int {
 func (this *SortedFloatSetRange) Get() <-chan []float64 {
 	op := "zrangebyscore"
 	args := make([]string, 2, 5)
-	
+
 	if this.reversed {
 		op = "zrevrangebyscore"
 		args[0] = this.max
 		args[1] = this.min
-	} else {	
+	} else {
 		args[0] = this.min
 		args[1] = this.max
 	}
-	
+
 	if this.limited {
 		args = append(args, "LIMIT", itoa(this.offset), itoa(this.count))
 	}
-	
+
 	command, output := newSliceCommand(this.key.args(op, args...))
 	this.key.Execute(command)
-	
+
 	realoutput := make(chan []float64, 1)
 	go func() {
 		defer close(realoutput)
@@ -219,25 +217,25 @@ func (this *SortedFloatSetRange) Get() <-chan []float64 {
 func (this *SortedFloatSetRange) GetWithScores() <-chan map[float64]float64 {
 	op := "zrangebyscore"
 	args := make([]string, 3, 6)
-	
+
 	if this.reversed {
 		op = "zrevrangebyscore"
 		args[0] = this.max
 		args[1] = this.min
-	} else {	
+	} else {
 		args[0] = this.min
 		args[1] = this.max
 	}
-	
+
 	args[2] = "WITHSCORES"
-	
+
 	if this.limited {
 		args = append(args, "LIMIT", itoa(this.offset), itoa(this.count))
 	}
-	
+
 	command, output := newMapCommand(this.key.args(op, args...))
 	this.key.Execute(command)
-	
+
 	realoutput := make(chan map[float64]float64, 1)
 	go func() {
 		defer close(realoutput)
@@ -261,7 +259,7 @@ func (this *SortedFloatSetRange) GetWithScores() <-chan map[float64]float64 {
 			realoutput <- result
 		}
 	}()
-	
+
 	return realoutput
 }
 
@@ -326,10 +324,10 @@ func (this *SortedFloatSetCombo) UseCombinedScores() <-chan int {
 func (this *SortedFloatSetCombo) args(mode string) []string {
 	result := make([]string, 1, 11)
 	result[0] = itoa(len(this.sets))
-	
+
 	weights := make([]string, 1, 3)
 	weights[0] = "WEIGHTS"
-	
+
 	for set, weight := range this.sets {
 		result = append(result, set)
 		weights = append(weights, ftoa(weight))
