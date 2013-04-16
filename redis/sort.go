@@ -1,8 +1,22 @@
 package redis
 
-import (
-	"errors"
-)
+type SortableKey struct {
+	Key
+}
+
+func newSortableKey(client Executor, key string) SortableKey {
+	return SortableKey{
+		newKey(client, key),
+	}
+}
+
+func (this SortableKey) SortAlphabetically() *Sorter {
+	return &Sorter{key: this.Key, alpha: true}
+}
+
+func (this SortableKey) SortNumerically() *Sorter {
+	return &Sorter{key: this.Key, alpha: false}
+}
 
 type sortLimit struct {
 	min, max int
@@ -16,11 +30,15 @@ type sortGet struct {
 	pattern string
 }
 
+type sortStore struct {
+	dest string
+}
+
 type Sorter struct {
 	limit    *sortLimit
 	by       *sortBy
-	get      []sortGet
-	typeSet  bool
+	get      *sortGet
+	store    *sortStore
 	alpha    bool
 	reversed bool
 
@@ -28,9 +46,6 @@ type Sorter struct {
 }
 
 func (this Sorter) sortargs() []string {
-	if !this.typeSet {
-		this.key.client.ErrCallback(errors.New("Argument error"), "Can't Tell If Should Sort Alphabetically or Numerically?!")
-	}
 	result := make([]string, 0, 10)
 	if this.by != nil {
 		result = append(result, "BY", this.by.pattern)
@@ -38,8 +53,8 @@ func (this Sorter) sortargs() []string {
 	if this.limit != nil {
 		result = append(result, "LIMIT", itoa(this.limit.min), itoa(this.limit.max))
 	}
-	for _, get := range this.get {
-		result = append(result, "GET", get.pattern)
+	if this.get != nil {
+		result = append(result, "GET", this.get.pattern)
 	}
 	if this.reversed {
 		result = append(result, "DESC")
@@ -47,14 +62,13 @@ func (this Sorter) sortargs() []string {
 	if this.alpha {
 		result = append(result, "ALPHA")
 	}
+	if this.store != nil {
+		result = append(result, "STORE", this.store.dest)
+	}
 	return result
 }
 
-func (this Sorter) sortstoreargs(dest string) []string {
-	return append(this.sortargs(), "STORE", dest)
-}
-
-func (this Sorter) Limit(min, max int) Sorter {
+func (this *Sorter) Limit(min, max int) *Sorter {
 	this.limit = &sortLimit{
 		min: min,
 		max: max,
@@ -62,47 +76,41 @@ func (this Sorter) Limit(min, max int) Sorter {
 	return this
 }
 
-func (this Sorter) Alphabetically() Sorter {
-	this.alpha = true
-	this.typeSet = true
-	return this
-}
-
-func (this Sorter) Numerically() Sorter {
-	this.typeSet = true
-	return this
-}
-
-//if we could figure out what kind of pattern was referred to here, we could automatically set alphabetically or numerically
-func (this Sorter) By(pattern string) Sorter {
+func (this *Sorter) By(pattern string) *Sorter {
 	this.by = &sortBy{
 		pattern: pattern,
 	}
 	return this
 }
 
-//if we could figure out what kind of pattern was referred to here, we could know what kind of channels to return later
-func (this Sorter) Get(pattern string) Sorter {
-	this.get = append(this.get, sortGet{
+func (this *Sorter) getFrom(pattern string) *Sorter {
+	this.get = &sortGet{
 		pattern: pattern,
-	})
+	}
 	return this
 }
 
-func (this Sorter) Reverse() Sorter {
+func (this *Sorter) storeIn(dest string) *Sorter {
+	this.store = &sortStore{
+		dest: dest,
+	}
+	return this
+}
+
+func (this *Sorter) Reverse() *Sorter {
 	this.reversed = !this.reversed
 	return this
 }
 
-func (this Sorter) Strings() <-chan []string {
+func (this *Sorter) Get() <-chan []string {
 	command, output := newSliceCommand(this.key.args("sort", this.sortargs()...))
 	this.key.Execute(command)
 	return output
 }
 
-func (this Sorter) Ints() <-chan []int {
+func (this *Sorter) GetInts() <-chan []int {
 	realoutput := make(chan []int, 1)
-	midway := this.Strings()
+	midway := this.Get()
 	go func() {
 		defer close(realoutput)
 		if output, ok := <-midway; ok {
@@ -116,9 +124,9 @@ func (this Sorter) Ints() <-chan []int {
 	return realoutput
 }
 
-func (this Sorter) Floats() <-chan []float64 {
+func (this *Sorter) GetFloats() <-chan []float64 {
 	realoutput := make(chan []float64, 1)
-	midway := this.Strings()
+	midway := this.Get()
 	go func() {
 		defer close(realoutput)
 		if output, ok := <-midway; ok {
@@ -132,16 +140,16 @@ func (this Sorter) Floats() <-chan []float64 {
 	return realoutput
 }
 
-//MaybeStrings, MaybeInts, and MaybeFloats should be used when you need to distinguish between 0 and nil responses
-func (this Sorter) MaybeStrings() <-chan []*string {
+func (this *Sorter) GetFrom(pattern string) <-chan []*string {
+	this.getFrom(pattern)
 	command, output := newMaybeSliceCommand(this.key.args("sort", this.sortargs()...))
 	this.key.Execute(command)
 	return output
 }
 
-func (this Sorter) MaybeInts() <-chan []*int {
+func (this *Sorter) GetIntsFrom(pattern string) <-chan []*int {
 	realoutput := make(chan []*int, 1)
-	midway := this.MaybeStrings()
+	midway := this.GetFrom(pattern)
 	go func() {
 		defer close(realoutput)
 		if strings, ok := <-midway; ok {
@@ -162,9 +170,9 @@ func (this Sorter) MaybeInts() <-chan []*int {
 	return realoutput
 }
 
-func (this Sorter) MaybeFloats() <-chan []*float64 {
+func (this *Sorter) GetFloatsFrom(pattern string) <-chan []*float64 {
 	realoutput := make(chan []*float64, 1)
-	midway := this.MaybeStrings()
+	midway := this.GetFrom(pattern)
 	go func() {
 		defer close(realoutput)
 		if strings, ok := <-midway; ok {
@@ -185,20 +193,35 @@ func (this Sorter) MaybeFloats() <-chan []*float64 {
 	return realoutput
 }
 
-func (this Sorter) StoreStrings(dest List) <-chan int {
-	command, output := newIntCommand(this.key.args("sort", this.sortstoreargs(dest.key)...))
+func (this *Sorter) StoreStrings(dest List) <-chan int {
+	this.storeIn(dest.key)
+	command, output := newIntCommand(this.key.args("sort", this.sortargs()...))
 	this.key.Execute(command)
 	return output
 }
 
-func (this Sorter) StoreInts(dest IntList) <-chan int {
-	command, output := newIntCommand(this.key.args("sort", this.sortstoreargs(dest.key)...))
+func (this *Sorter) StoreInts(dest IntList) <-chan int {
+	this.storeIn(dest.key)
+	command, output := newIntCommand(this.key.args("sort", this.sortargs()...))
 	this.key.Execute(command)
 	return output
 }
 
-func (this Sorter) StoreFloats(dest FloatList) <-chan int {
-	command, output := newIntCommand(this.key.args("sort", this.sortstoreargs(dest.key)...))
+func (this *Sorter) StoreFloats(dest FloatList) <-chan int {
+	this.storeIn(dest.key)
+	command, output := newIntCommand(this.key.args("sort", this.sortargs()...))
 	this.key.Execute(command)
 	return output
+}
+
+func (this *Sorter) GetFromAndStoreIn(pattern string, dest List) <-chan int {
+	return this.getFrom(pattern).StoreStrings(dest)
+}
+
+func (this *Sorter) GetIntsFromAndStoreIn(pattern string, dest IntList) <-chan int {
+	return this.getFrom(pattern).StoreInts(dest)
+}
+
+func (this *Sorter) GetFloatsFromAndStoreIn(pattern string, dest FloatList) <-chan int {
+	return this.getFrom(pattern).StoreFloats(dest)
 }

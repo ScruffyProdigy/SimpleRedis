@@ -1,12 +1,12 @@
 package redis
 
 type SortedFloatSet struct {
-	Key
+	SortableKey
 }
 
 func newSortedFloatSet(client Executor, key string) SortedFloatSet {
 	return SortedFloatSet{
-		newKey(client, key),
+		newSortableKey(client, key),
 	}
 }
 

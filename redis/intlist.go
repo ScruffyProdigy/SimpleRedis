@@ -1,12 +1,12 @@
 package redis
 
 type IntList struct {
-	Key
+	SortableKey
 }
 
 func newIntList(client Executor, key string) IntList {
 	return IntList{
-		newKey(client, key),
+		newSortableKey(client, key),
 	}
 }
 
@@ -188,10 +188,6 @@ func (this IntList) BlockUntilMoveLastItemToListWithTimeout(newList IntList, tim
 	command, output := newIntCommand(this.args("brpoplpush", newList.key, itoa(timeout)))
 	this.Execute(command)
 	return output
-}
-
-func (this IntList) Sort() Sorter {
-	return Sorter{key: this.Key}
 }
 
 func (this IntList) Use(e Executor) IntList {

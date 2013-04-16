@@ -1,12 +1,12 @@
 package redis
 
 type FloatList struct {
-	Key
+	SortableKey
 }
 
 func newFloatList(client Executor, key string) FloatList {
 	return FloatList{
-		newKey(client, key),
+		newSortableKey(client, key),
 	}
 }
 
@@ -190,10 +190,6 @@ func (this FloatList) BlockUntilMoveLastItemToListWithTimeout(newList FloatList,
 	command, output := newFloatCommand(this.args("brpoplpush", newList.key, itoa(timeout)))
 	this.Execute(command)
 	return output
-}
-
-func (this FloatList) Sort() Sorter {
-	return Sorter{key: this.Key}
 }
 
 func (this FloatList) Use(e Executor) FloatList {

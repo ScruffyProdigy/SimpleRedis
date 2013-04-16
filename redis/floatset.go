@@ -1,12 +1,12 @@
 package redis
 
 type FloatSet struct {
-	Key
+	SortableKey
 }
 
 func newFloatSet(client Executor, key string) FloatSet {
 	return FloatSet{
-		newKey(client, key),
+		newSortableKey(client, key),
 	}
 }
 
@@ -149,10 +149,6 @@ func (this FloatSet) MoveMemberTo(newSet FloatSet, item float64) <-chan bool {
 	command, output := newBoolCommand(this.args("smove", newSet.key, ftoa(item)))
 	this.Execute(command)
 	return output
-}
-
-func (this FloatSet) Sort() Sorter {
-	return Sorter{key: this.Key}
 }
 
 func (this FloatSet) Use(e Executor) FloatSet {

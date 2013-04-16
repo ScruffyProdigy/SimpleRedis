@@ -1,12 +1,12 @@
 package redis
 
 type SortedSet struct {
-	Key
+	SortableKey
 }
 
 func newSortedSet(client Executor, key string) SortedSet {
 	return SortedSet{
-		newKey(client, key),
+		newSortableKey(client, key),
 	}
 }
 

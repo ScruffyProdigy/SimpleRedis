@@ -1,12 +1,12 @@
 package redis
 
 type Set struct {
-	Key
+	SortableKey
 }
 
 func newSet(client Executor, key string) Set {
 	return Set{
-		newKey(client, key),
+		newSortableKey(client, key),
 	}
 }
 
@@ -101,10 +101,6 @@ func (this Set) MoveMemberTo(newSet Set, item string) <-chan bool {
 	command, output := newBoolCommand(this.args("smove", newSet.key, item))
 	this.Execute(command)
 	return output
-}
-
-func (this Set) Sort() Sorter {
-	return Sorter{key: this.Key}
 }
 
 func (this Set) Use(e Executor) Set {
