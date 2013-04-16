@@ -72,10 +72,8 @@ func (this Client) Transaction(callback func(Executor)) {
 		defer func() {
 			rec := recover()
 			if rec == nil {
-				print("Executed!\n")
 				p.Execute(exec)
 			} else {
-				print("Discarded!\n")
 				p.Execute(discard)
 				result = false
 			}

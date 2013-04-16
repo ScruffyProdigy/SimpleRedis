@@ -31,6 +31,10 @@ func (this Hash) Integer(key string) HashInteger {
 	return newHashInteger(this, key)
 }
 
+func (this Hash) Float(key string) HashFloat {
+	return newHashFloat(this, key)
+}
+
 func (this Hash) Size() <-chan int {
 	command, output := newIntCommand(this.args("hlen"))
 	this.Execute(command)
@@ -167,14 +171,14 @@ func (this HashFloat) SetIfEmpty(val float64) <-chan bool {
 	return output
 }
 
-func (this HashFloat) IncrementBy(val float64) <-chan int {
-	command, output := newIntCommand(this.args("hincrbyfloat", ftoa(val)))
+func (this HashFloat) IncrementBy(val float64) <-chan float64 {
+	command, output := newFloatCommand(this.args("hincrbyfloat", ftoa(val)))
 	this.parent.Execute(command)
 	return output
 }
 
-func (this HashFloat) DecrementBy(val float64) <-chan int {
-	command, output := newIntCommand(this.args("hincrbyfloat", ftoa(-val)))
+func (this HashFloat) DecrementBy(val float64) <-chan float64 {
+	command, output := newFloatCommand(this.args("hincrbyfloat", ftoa(-val)))
 	this.parent.Execute(command)
 	return output
 }
