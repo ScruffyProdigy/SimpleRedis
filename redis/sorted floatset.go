@@ -4,7 +4,7 @@ type SortedFloatSet struct {
 	SortableKey
 }
 
-func newSortedFloatSet(client Executor, key string) SortedFloatSet {
+func newSortedFloatSet(client SafeExecutor, key string) SortedFloatSet {
 	return SortedFloatSet{
 		newSortableKey(client, key),
 	}
@@ -20,86 +20,63 @@ func (this SortedFloatSet) IsValid() <-chan bool {
 }
 
 func (this SortedFloatSet) Add(item float64, score float64) <-chan bool {
-	command, output := newBoolCommand(this.args("zadd", ftoa(score), ftoa(item)))
-	this.Execute(command)
-	return output
+	return BoolCommand(this, this.args("zadd", ftoa(score), ftoa(item)))
 }
 
 func (this SortedFloatSet) IncrementBy(item float64, score float64) <-chan float64 {
-	command, output := newFloatCommand(this.args("zincrby", ftoa(score), ftoa(item)))
-	this.Execute(command)
-	return output
+	return FloatCommand(this, this.args("zincrby", ftoa(score), ftoa(item)))
 }
 
 func (this SortedFloatSet) Remove(item float64) <-chan bool {
-	command, output := newBoolCommand(this.args("zrem", ftoa(item)))
-	this.Execute(command)
-	return output
+	return BoolCommand(this, this.args("zrem", ftoa(item)))
 }
-
 func (this SortedFloatSet) Size() <-chan int {
-	command, output := newIntCommand(this.args("zcard"))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("zcard"))
 }
-
 func (this SortedFloatSet) IndexOf(item float64) <-chan int {
-	command, output := newIntCommand(this.args("zrank", ftoa(item)))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("zrank", ftoa(item)))
 }
-
 func (this SortedFloatSet) ReverseIndexOf(item float64) <-chan int {
-	command, output := newIntCommand(this.args("zrevrank", ftoa(item)))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("zrevrank", ftoa(item)))
 }
-
 func (this SortedFloatSet) ScoreOf(item float64) <-chan float64 {
-	command, output := newFloatCommand(this.args("zscore", ftoa(item)))
-	this.Execute(command)
-	return output
+	return FloatCommand(this, this.args("zscore", ftoa(item)))
 }
-
 func (this SortedFloatSet) IndexedBetween(start, stop int) <-chan []float64 {
-	command, output := newSliceCommand(this.args("zrange", itoa(start), itoa(stop)))
-	this.Execute(command)
+	output := SliceCommand(this, this.args("zrange", itoa(start), itoa(stop)))
 	realoutput := make(chan []float64, 1)
 	go func() {
 		defer close(realoutput)
 		if midway, ok := <-output; ok {
-			floats, err := stringsToFloats(midway)
-			if err != nil {
+			if floats, err := stringsToFloats(midway); err != nil {
 				this.client.ErrCallback(err, "zrange")
+			} else {
+				realoutput <- floats
 			}
-			realoutput <- floats
 		}
 	}()
 	return realoutput
 }
 
 func (this SortedFloatSet) ReverseIndexedBetween(start, stop int) <-chan []float64 {
-	command, output := newSliceCommand(this.args("zrevrange", itoa(start), itoa(stop)))
-	this.Execute(command)
+	output := SliceCommand(this, this.args("zrevrange", itoa(start), itoa(stop)))
 	realoutput := make(chan []float64, 1)
 	go func() {
 		defer close(realoutput)
 		if midway, ok := <-output; ok {
-			floats, err := stringsToFloats(midway)
-			if err != nil {
+			if floats, err := stringsToFloats(midway); err != nil {
 				this.client.ErrCallback(err, "zrevrange")
 				return
+			} else {
+				realoutput <- floats
 			}
-			realoutput <- floats
 		}
 	}()
 	return realoutput
 }
 
 func (this SortedFloatSet) RemoveIndexedBetween(start, stop int) <-chan int {
-	command, output := newIntCommand(this.args("zremrangebyrank", itoa(start), itoa(stop)))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("zremrangebyrank", itoa(start), itoa(stop)))
 }
 
 type SortedFloatSetRange struct {
@@ -167,15 +144,11 @@ func (this *SortedFloatSetRange) Limit(offset, count int) *SortedFloatSetRange {
 }
 
 func (this *SortedFloatSetRange) Count() <-chan int {
-	command, output := newIntCommand(this.key.args("zcount", this.min, this.max))
-	this.key.Execute(command)
-	return output
+	return IntCommand(this.key, this.key.args("zcount", this.min, this.max))
 }
 
 func (this *SortedFloatSetRange) Remove() <-chan int {
-	command, output := newIntCommand(this.key.args("zremrangebyscore", this.min, this.max))
-	this.key.Execute(command)
-	return output
+	return IntCommand(this.key, this.key.args("zremrangebyscore", this.min, this.max))
 }
 
 func (this *SortedFloatSetRange) Get() <-chan []float64 {
@@ -195,14 +168,12 @@ func (this *SortedFloatSetRange) Get() <-chan []float64 {
 		args = append(args, "LIMIT", itoa(this.offset), itoa(this.count))
 	}
 
-	command, output := newSliceCommand(this.key.args(op, args...))
-	this.key.Execute(command)
-
+	output := SliceCommand(this.key, this.key.args(op, args...))
 	realoutput := make(chan []float64, 1)
 	go func() {
 		defer close(realoutput)
-		if midway, ok := <-output; ok {
-			floats, err := stringsToFloats(midway)
+		if strings, ok := <-output; ok {
+			floats, err := stringsToFloats(strings)
 			if err != nil {
 				this.key.client.ErrCallback(err, "sort by score")
 				return
@@ -210,7 +181,6 @@ func (this *SortedFloatSetRange) Get() <-chan []float64 {
 			realoutput <- floats
 		}
 	}()
-
 	return realoutput
 }
 
@@ -233,9 +203,7 @@ func (this *SortedFloatSetRange) GetWithScores() <-chan map[float64]float64 {
 		args = append(args, "LIMIT", itoa(this.offset), itoa(this.count))
 	}
 
-	command, output := newMapCommand(this.key.args(op, args...))
-	this.key.Execute(command)
-
+	output := MapCommand(this.key, this.key.args(op, args...))
 	realoutput := make(chan map[float64]float64, 1)
 	go func() {
 		defer close(realoutput)
@@ -304,21 +272,15 @@ func (this *SortedFloatSetCombo) OfWeightedSet(otherSet SortedFloatSet, weight f
 }
 
 func (this *SortedFloatSetCombo) UseLowerScore() <-chan int {
-	command, output := newIntCommand(this.args("MIN"))
-	this.key.Execute(command)
-	return output
+	return IntCommand(this.key, this.args("MIN"))
 }
 
 func (this *SortedFloatSetCombo) UseHigherScore() <-chan int {
-	command, output := newIntCommand(this.args("MAX"))
-	this.key.Execute(command)
-	return output
+	return IntCommand(this.key, this.args("MAX"))
 }
 
 func (this *SortedFloatSetCombo) UseCombinedScores() <-chan int {
-	command, output := newIntCommand(this.args("SUM"))
-	this.key.Execute(command)
-	return output
+	return IntCommand(this.key, this.args("SUM"))
 }
 
 func (this *SortedFloatSetCombo) args(mode string) []string {
@@ -344,7 +306,7 @@ func (this *SortedFloatSetCombo) args(mode string) []string {
 	return this.key.args(this.op, result...)
 }
 
-func (this SortedFloatSet) Use(e Executor) SortedFloatSet {
+func (this SortedFloatSet) Use(e SafeExecutor) SortedFloatSet {
 	this.client = e
 	return this
 }

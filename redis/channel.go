@@ -100,15 +100,13 @@ func (this Channel) PatternSubscribe(action func(string)) (startSignal <-chan no
 
 func (this Channel) blockingSubscription(subscription func(<-chan string), sub, unsub string) {
 	this.client.useNewConnection(func(conn *Connection) {
-		subscriber, result := newNilCommand(this.args(sub))
-		conn.Execute(subscriber)
+		result := NilCommand(conn, this.args(sub))
 		<-result
 
 		defer func() {
-			unsubscriber, _ := newNilCommand(this.args(unsub))
 			// we can't get a response, because another gorouting is already listening. 
 			// We'll just use the input, and have the other side get the output
-			conn.input(unsubscriber)
+			conn.input(nilCommand{this.args(unsub), make(chan nothing)})
 		}()
 
 		output := messageLoop(conn, this.client.errCallback)
@@ -127,12 +125,10 @@ func (this Channel) BlockingPatternSubscription(subscription func(<-chan string)
 }
 
 func (this Channel) Publish(message string) <-chan int {
-	command, result := newIntCommand(this.args("publish", message))
-	this.Key.client.Execute(command)
-	return result
+	return IntCommand(this, this.args("publish", message))
 }
 
-func (this Channel) Use(e Executor) Channel {
+func (this Channel) Use(e SafeExecutor) Channel {
 	this.Key.client = e
 	return this
 }

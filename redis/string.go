@@ -4,7 +4,7 @@ type String struct {
 	Key
 }
 
-func newString(client Executor, key string) String {
+func newString(client SafeExecutor, key string) String {
 	return String{
 		newKey(client, key),
 	}
@@ -20,48 +20,25 @@ func (this String) IsValid() <-chan bool {
 }
 
 func (this String) Set(val string) <-chan nothing {
-	command, output := newNilCommand(this.args("set", val))
-	this.Execute(command)
-	return output
+	return NilCommand(this, this.args("set", val))
 }
-
 func (this String) SetIfEmpty(val string) <-chan bool {
-	command, output := newBoolCommand(this.args("setnx", val))
-	this.Execute(command)
-	return output
+	return BoolCommand(this, this.args("setnx", val))
 }
-
 func (this String) Get() <-chan string {
-	command, output := newStringCommand(this.args("get"))
-	this.Execute(command)
-	return output
-}
-
-func (this String) Clear() <-chan string {
-	val := this.Get()
-	<-this.Delete()
-	return val
+	return StringCommand(this, this.args("get"))
 }
 
 func (this String) Replace(val string) <-chan string {
-	command, output := newStringCommand(this.args("getset", val))
-	this.Execute(command)
-	return output
+	return StringCommand(this, this.args("getset", val))
 }
-
 func (this String) Append(val string) <-chan int {
-	command, output := newIntCommand(this.args("append", val))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("append", val))
 }
-
 func (this String) Length() <-chan int {
-	command, output := newIntCommand(this.args("strlen"))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("strlen"))
 }
-
-func (this String) Use(e Executor) String {
+func (this String) Use(e SafeExecutor) String {
 	this.client = e
 	return this
 }

@@ -4,7 +4,7 @@ type FloatList struct {
 	SortableKey
 }
 
-func newFloatList(client Executor, key string) FloatList {
+func newFloatList(client SafeExecutor, key string) FloatList {
 	return FloatList{
 		newSortableKey(client, key),
 	}
@@ -21,39 +21,27 @@ func (this FloatList) IsValid() <-chan bool {
 
 //
 func (this FloatList) Length() <-chan int {
-	command, output := newIntCommand(this.args("llen"))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("llen"))
 }
 
 func (this FloatList) LeftPush(items ...float64) <-chan float64 {
-	command, output := newFloatCommand(this.args("lpush", floatsToStrings(items)...))
-	this.Execute(command)
-	return output
+	return FloatCommand(this, this.args("lpush", floatsToStrings(items)...))
 }
 
 func (this FloatList) LeftPushIfExists(item float64) <-chan float64 {
-	command, output := newFloatCommand(this.args("lpushx", ftoa(item)))
-	this.Execute(command)
-	return output
+	return FloatCommand(this, this.args("lpushx", ftoa(item)))
 }
 
 func (this FloatList) RightPush(items ...float64) <-chan float64 {
-	command, output := newFloatCommand(this.args("rpush", floatsToStrings(items)...))
-	this.Execute(command)
-	return output
+	return FloatCommand(this, this.args("rpush", floatsToStrings(items)...))
 }
 
 func (this FloatList) RightPushIfExists(item float64) <-chan float64 {
-	command, output := newFloatCommand(this.args("rpushx", ftoa(item)))
-	this.Execute(command)
-	return output
+	return FloatCommand(this, this.args("rpushx", ftoa(item)))
 }
 
 func (this FloatList) LeftPop() <-chan float64 {
-	command, output := newFloatCommand(this.args("lpop"))
-	this.Execute(command)
-	return output
+	return FloatCommand(this, this.args("lpop"))
 }
 
 //perhaps allow these commands to take extra lists
@@ -63,8 +51,7 @@ func (this FloatList) BlockUntilLeftPop() <-chan float64 {
 }
 
 func (this FloatList) BlockUntilLeftPopWithTimeout(timeout int) <-chan float64 {
-	command, output := newSliceCommand(this.args("blpop", itoa(timeout)))
-	this.Execute(command)
+	output := SliceCommand(this, this.args("blpop", itoa(timeout)))
 	realoutput := make(chan float64, 1)
 	go func() {
 		defer close(realoutput)
@@ -81,9 +68,7 @@ func (this FloatList) BlockUntilLeftPopWithTimeout(timeout int) <-chan float64 {
 }
 
 func (this FloatList) RightPop() <-chan float64 {
-	command, output := newFloatCommand(this.args("rpop"))
-	this.Execute(command)
-	return output
+	return FloatCommand(this, this.args("rpop"))
 }
 
 //perhaps allow these commands to take extra lists
@@ -93,8 +78,7 @@ func (this FloatList) BlockUntilRightPop() <-chan float64 {
 }
 
 func (this FloatList) BlockUntilRightPopWithTimeout(timeout int) <-chan float64 {
-	command, output := newSliceCommand(this.args("brpop", itoa(timeout)))
-	this.Execute(command)
+	output := SliceCommand(this, this.args("brpop", itoa(timeout)))
 	realoutput := make(chan float64, 1)
 	go func() {
 		defer close(realoutput)
@@ -111,50 +95,35 @@ func (this FloatList) BlockUntilRightPopWithTimeout(timeout int) <-chan float64 
 }
 
 func (this FloatList) Index(index int) <-chan float64 {
-	command, output := newFloatCommand(this.args("lindex", itoa(index)))
-	this.Execute(command)
-	return output
+	return FloatCommand(this, this.args("lindex", itoa(index)))
 }
 
 func (this FloatList) Remove(item ...float64) <-chan int {
-	command, output := newIntCommand(this.args("lrem", append([]string{"0"}, floatsToStrings(item)...)...))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("lrem", append([]string{"0"}, floatsToStrings(item)...)...))
 }
 
 func (this FloatList) RemoveNFromLeft(n int, item float64) <-chan int {
-	command, output := newIntCommand(this.args("lrem", itoa(n), ftoa(item)))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("lrem", itoa(n), ftoa(item)))
 }
 
 func (this FloatList) RemoveNFromRight(n int, item float64) <-chan int {
-	command, output := newIntCommand(this.args("lrem", itoa(-n), ftoa(item)))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("lrem", itoa(-n), ftoa(item)))
 }
 
 func (this FloatList) Set(index int, item float64) <-chan nothing {
-	command, output := newNilCommand(this.args("lset", itoa(index), ftoa(item)))
-	this.Execute(command)
-	return output
+	return NilCommand(this, this.args("lset", itoa(index), ftoa(item)))
 }
 
 func (this FloatList) InsertBefore(pivot, item float64) <-chan int {
-	command, output := newIntCommand(this.args("linsert", "BEFORE", ftoa(pivot), ftoa(item)))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("linsert", "BEFORE", ftoa(pivot), ftoa(item)))
 }
 
 func (this FloatList) InsertAfter(pivot, item float64) <-chan int {
-	command, output := newIntCommand(this.args("linsert", "AFTER", ftoa(pivot), ftoa(item)))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("linsert", "AFTER", ftoa(pivot), ftoa(item)))
 }
 
 func (this FloatList) GetFromRange(left, right int) <-chan []float64 {
-	command, output := newSliceCommand(this.args("lrange", itoa(left), itoa(right)))
-	this.Execute(command)
+	output := SliceCommand(this, this.args("lrange", itoa(left), itoa(right)))
 	realoutput := make(chan []float64, 1)
 	go func() {
 		defer close(realoutput)
@@ -171,15 +140,11 @@ func (this FloatList) GetFromRange(left, right int) <-chan []float64 {
 }
 
 func (this FloatList) TrimToRange(left, right int) <-chan nothing {
-	command, output := newNilCommand(this.args("ltrim", itoa(left), itoa(right)))
-	this.Execute(command)
-	return output
+	return NilCommand(this, this.args("ltrim", itoa(left), itoa(right)))
 }
 
 func (this FloatList) MoveLastItemToList(newList FloatList) <-chan float64 {
-	command, output := newFloatCommand(this.args("rpoplpush", newList.key))
-	this.Execute(command)
-	return output
+	return FloatCommand(this, this.args("rpoplpush", newList.key))
 }
 
 func (this FloatList) BlockUntilMoveLastItemToList(newList FloatList) <-chan float64 {
@@ -187,12 +152,10 @@ func (this FloatList) BlockUntilMoveLastItemToList(newList FloatList) <-chan flo
 }
 
 func (this FloatList) BlockUntilMoveLastItemToListWithTimeout(newList FloatList, timeout int) <-chan float64 {
-	command, output := newFloatCommand(this.args("brpoplpush", newList.key, itoa(timeout)))
-	this.Execute(command)
-	return output
+	return FloatCommand(this, this.args("brpoplpush", newList.key, itoa(timeout)))
 }
 
-func (this FloatList) Use(e Executor) FloatList {
+func (this FloatList) Use(e SafeExecutor) FloatList {
 	this.client = e
 	return this
 }

@@ -4,7 +4,7 @@ type SortableKey struct {
 	Key
 }
 
-func newSortableKey(client Executor, key string) SortableKey {
+func newSortableKey(client SafeExecutor, key string) SortableKey {
 	return SortableKey{
 		newKey(client, key),
 	}
@@ -103,18 +103,16 @@ func (this *Sorter) Reverse() *Sorter {
 }
 
 func (this *Sorter) Get() <-chan []string {
-	command, output := newSliceCommand(this.key.args("sort", this.sortargs()...))
-	this.key.Execute(command)
-	return output
+	return SliceCommand(this.key, this.key.args("sort", this.sortargs()...))
 }
 
 func (this *Sorter) GetInts() <-chan []int {
+	output := this.Get()
 	realoutput := make(chan []int, 1)
-	midway := this.Get()
 	go func() {
 		defer close(realoutput)
-		if output, ok := <-midway; ok {
-			ints, err := stringsToInts(output)
+		if strings, ok := <-output; ok {
+			ints, err := stringsToInts(strings)
 			if err != nil {
 				this.key.client.ErrCallback(err, "sorting ints")
 			}
@@ -125,12 +123,12 @@ func (this *Sorter) GetInts() <-chan []int {
 }
 
 func (this *Sorter) GetFloats() <-chan []float64 {
+	output := this.Get()
 	realoutput := make(chan []float64, 1)
-	midway := this.Get()
 	go func() {
 		defer close(realoutput)
-		if output, ok := <-midway; ok {
-			floats, err := stringsToFloats(output)
+		if strings, ok := <-output; ok {
+			floats, err := stringsToFloats(strings)
 			if err != nil {
 				this.key.client.ErrCallback(err, "sorting floats")
 			}
@@ -142,17 +140,15 @@ func (this *Sorter) GetFloats() <-chan []float64 {
 
 func (this *Sorter) GetFrom(pattern string) <-chan []*string {
 	this.getFrom(pattern)
-	command, output := newMaybeSliceCommand(this.key.args("sort", this.sortargs()...))
-	this.key.Execute(command)
-	return output
+	return MaybeSliceCommand(this.key, this.key.args("sort", this.sortargs()...))
 }
 
 func (this *Sorter) GetIntsFrom(pattern string) <-chan []*int {
+	output := this.GetFrom(pattern)
 	realoutput := make(chan []*int, 1)
-	midway := this.GetFrom(pattern)
 	go func() {
 		defer close(realoutput)
-		if strings, ok := <-midway; ok {
+		if strings, ok := <-output; ok {
 			ints := make([]*int, len(strings))
 			for i, str := range strings {
 				if str != nil {
@@ -163,7 +159,6 @@ func (this *Sorter) GetIntsFrom(pattern string) <-chan []*int {
 					ints[i] = &j
 				}
 			}
-
 			realoutput <- ints
 		}
 	}()
@@ -171,11 +166,11 @@ func (this *Sorter) GetIntsFrom(pattern string) <-chan []*int {
 }
 
 func (this *Sorter) GetFloatsFrom(pattern string) <-chan []*float64 {
+	output := this.GetFrom(pattern)
 	realoutput := make(chan []*float64, 1)
-	midway := this.GetFrom(pattern)
 	go func() {
 		defer close(realoutput)
-		if strings, ok := <-midway; ok {
+		if strings, ok := <-output; ok {
 			floats := make([]*float64, len(strings))
 			for i, str := range strings {
 				if str != nil {
@@ -186,7 +181,6 @@ func (this *Sorter) GetFloatsFrom(pattern string) <-chan []*float64 {
 					floats[i] = &j
 				}
 			}
-
 			realoutput <- floats
 		}
 	}()
@@ -195,23 +189,17 @@ func (this *Sorter) GetFloatsFrom(pattern string) <-chan []*float64 {
 
 func (this *Sorter) StoreStrings(dest List) <-chan int {
 	this.storeIn(dest.key)
-	command, output := newIntCommand(this.key.args("sort", this.sortargs()...))
-	this.key.Execute(command)
-	return output
+	return IntCommand(this.key, this.key.args("sort", this.sortargs()...))
 }
 
 func (this *Sorter) StoreInts(dest IntList) <-chan int {
 	this.storeIn(dest.key)
-	command, output := newIntCommand(this.key.args("sort", this.sortargs()...))
-	this.key.Execute(command)
-	return output
+	return IntCommand(this.key, this.key.args("sort", this.sortargs()...))
 }
 
 func (this *Sorter) StoreFloats(dest FloatList) <-chan int {
 	this.storeIn(dest.key)
-	command, output := newIntCommand(this.key.args("sort", this.sortargs()...))
-	this.key.Execute(command)
-	return output
+	return IntCommand(this.key, this.key.args("sort", this.sortargs()...))
 }
 
 func (this *Sorter) GetFromAndStoreIn(pattern string, dest List) <-chan int {

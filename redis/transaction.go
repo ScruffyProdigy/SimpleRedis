@@ -7,16 +7,15 @@ type pipe struct {
 	errCallback errCallback
 }
 
-func (this *pipe) Execute(command command) error {
+func (this *pipe) Execute(command command) {
 	this.commands = append(this.commands, command)
-	return nil
 }
 
 func (this *pipe) ErrCallback(err error, s string) {
 	this.errCallback.Call(err, s)
 }
 
-func (this Client) piping(callback func(Executor) bool, queued bool) {
+func (this Client) piping(callback func(SafeExecutor) bool, queued bool) {
 	p := new(pipe)
 	p.commands = make([]command, 0, 5)
 	p.errCallback = this.errCallback
@@ -56,25 +55,22 @@ func (this Client) piping(callback func(Executor) bool, queued bool) {
 	result = callback(p)
 }
 
-func (this Client) Pipeline(callback func(Executor)) {
-	this.piping(func(e Executor) bool {
+func (this Client) Pipeline(callback func(SafeExecutor)) {
+	this.piping(func(e SafeExecutor) bool {
 		callback(e)
 		return true
 	}, false)
 }
 
-func (this Client) Transaction(callback func(Executor)) {
-	multi, _ := newNilCommand([]string{"MULTI"})
-	exec, _ := newNilCommand([]string{"EXEC"})
-	discard, _ := newNilCommand([]string{"DISCARD"})
-	this.piping(func(p Executor) (result bool) {
-		p.Execute(multi)
+func (this Client) Transaction(callback func(SafeExecutor)) {
+	this.piping(func(p SafeExecutor) (result bool) {
+		NilCommand(p, []string{"MULTI"})
 		defer func() {
 			rec := recover()
 			if rec == nil {
-				p.Execute(exec)
+				NilCommand(p, []string{"EXEC"})
 			} else {
-				p.Execute(discard)
+				NilCommand(p, []string{"DISCARD"})
 				result = false
 			}
 		}()

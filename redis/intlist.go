@@ -4,7 +4,7 @@ type IntList struct {
 	SortableKey
 }
 
-func newIntList(client Executor, key string) IntList {
+func newIntList(client SafeExecutor, key string) IntList {
 	return IntList{
 		newSortableKey(client, key),
 	}
@@ -21,39 +21,27 @@ func (this IntList) IsValid() <-chan bool {
 
 //
 func (this IntList) Length() <-chan int {
-	command, output := newIntCommand(this.args("llen"))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("llen"))
 }
 
 func (this IntList) LeftPush(items ...int) <-chan int {
-	command, output := newIntCommand(this.args("lpush", intsToStrings(items)...))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("lpush", intsToStrings(items)...))
 }
 
 func (this IntList) LeftPushIfExists(item int) <-chan int {
-	command, output := newIntCommand(this.args("lpushx", itoa(item)))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("lpushx", itoa(item)))
 }
 
 func (this IntList) RightPush(items ...int) <-chan int {
-	command, output := newIntCommand(this.args("rpush", intsToStrings(items)...))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("rpush", intsToStrings(items)...))
 }
 
 func (this IntList) RightPushIfExists(item int) <-chan int {
-	command, output := newIntCommand(this.args("rpushx", itoa(item)))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("rpushx", itoa(item)))
 }
 
 func (this IntList) LeftPop() <-chan int {
-	command, output := newIntCommand(this.args("lpop"))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("lpop"))
 }
 
 //perhaps allow these commands to take extra lists
@@ -63,27 +51,24 @@ func (this IntList) BlockUntilLeftPop() <-chan int {
 }
 
 func (this IntList) BlockUntilLeftPopWithTimeout(timeout int) <-chan int {
-	command, output := newSliceCommand(this.args("blpop", itoa(timeout)))
-	this.Execute(command)
+	output := SliceCommand(this, this.args("blpop", itoa(timeout)))
 	realoutput := make(chan int, 1)
 	go func() {
 		defer close(realoutput)
 		if slice, ok := <-output; ok {
-			res, err := atoi(slice[1])
-			if err != nil {
+			if res, err := atoi(slice[1]); err != nil {
 				this.client.ErrCallback(err, "blpop")
 				return
+			} else {
+				realoutput <- res
 			}
-			realoutput <- res
 		}
 	}()
 	return realoutput
 }
 
 func (this IntList) RightPop() <-chan int {
-	command, output := newIntCommand(this.args("rpop"))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("rpop"))
 }
 
 //perhaps allow these commands to take extra lists
@@ -93,91 +78,71 @@ func (this IntList) BlockUntilRightPop() <-chan int {
 }
 
 func (this IntList) BlockUntilRightPopWithTimeout(timeout int) <-chan int {
-	command, output := newSliceCommand(this.args("brpop", itoa(timeout)))
-	this.Execute(command)
+	output := SliceCommand(this, this.args("brpop", itoa(timeout)))
 	realoutput := make(chan int, 1)
 	go func() {
 		defer close(realoutput)
 		if slice, ok := <-output; ok {
-			res, err := atoi(slice[1])
-			if err != nil {
+			if res, err := atoi(slice[1]); err != nil {
 				this.client.ErrCallback(err, "brpop")
+			} else {
+				realoutput <- res
 			}
-			realoutput <- res
 		}
 	}()
 	return realoutput
 }
 
 func (this IntList) Index(index int) <-chan int {
-	command, output := newIntCommand(this.args("lindex", itoa(index)))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("lindex", itoa(index)))
 }
 
 func (this IntList) Remove(item ...int) <-chan int {
-	command, output := newIntCommand(this.args("lrem", append([]string{"0"}, intsToStrings(item)...)...))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("lrem", append([]string{"0"}, intsToStrings(item)...)...))
 }
 
 func (this IntList) RemoveNFromLeft(n int, item int) <-chan int {
-	command, output := newIntCommand(this.args("lrem", itoa(n), itoa(item)))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("lrem", itoa(n), itoa(item)))
 }
 
 func (this IntList) RemoveNFromRight(n int, item int) <-chan int {
-	command, output := newIntCommand(this.args("lrem", itoa(-n), itoa(item)))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("lrem", itoa(-n), itoa(item)))
 }
 
 func (this IntList) Set(index int, item int) <-chan nothing {
-	command, output := newNilCommand(this.args("lset", itoa(index), itoa(item)))
-	this.Execute(command)
-	return output
+	return NilCommand(this, this.args("lset", itoa(index), itoa(item)))
 }
 
 func (this IntList) InsertBefore(pivot, item int) <-chan int {
-	command, output := newIntCommand(this.args("linsert", "BEFORE", itoa(pivot), itoa(item)))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("linsert", "BEFORE", itoa(pivot), itoa(item)))
 }
 
 func (this IntList) InsertAfter(pivot, item int) <-chan int {
-	command, output := newIntCommand(this.args("linsert", "AFTER", itoa(pivot), itoa(item)))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("linsert", "AFTER", itoa(pivot), itoa(item)))
 }
 
 func (this IntList) GetFromRange(left, right int) <-chan []int {
-	command, output := newSliceCommand(this.args("lrange", itoa(left), itoa(right)))
-	this.Execute(command)
+	output := SliceCommand(this, this.args("lrange", itoa(left), itoa(right)))
 	realoutput := make(chan []int, 1)
 	go func() {
 		defer close(realoutput)
 		if slice, ok := <-output; ok {
-			ints, err := stringsToInts(slice)
-			if err != nil {
+			if ints, err := stringsToInts(slice); err != nil {
 				this.client.ErrCallback(err, "lrange")
+			} else {
+				realoutput <- ints
 			}
-			realoutput <- ints
 		}
 	}()
 	return realoutput
 }
 
 func (this IntList) TrimToRange(left, right int) <-chan nothing {
-	command, output := newNilCommand(this.args("ltrim", itoa(left), itoa(right)))
-	this.Execute(command)
-	return output
+	return NilCommand(this, this.args("ltrim", itoa(left), itoa(right)))
 }
 
 func (this IntList) MoveLastItemToList(newList IntList) <-chan int {
-	command, output := newIntCommand(this.args("rpoplpush", newList.key))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("rpoplpush", newList.key))
 }
 
 func (this IntList) BlockUntilMoveLastItemToList(newList IntList) <-chan int {
@@ -185,12 +150,10 @@ func (this IntList) BlockUntilMoveLastItemToList(newList IntList) <-chan int {
 }
 
 func (this IntList) BlockUntilMoveLastItemToListWithTimeout(newList IntList, timeout int) <-chan int {
-	command, output := newIntCommand(this.args("brpoplpush", newList.key, itoa(timeout)))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("brpoplpush", newList.key, itoa(timeout)))
 }
 
-func (this IntList) Use(e Executor) IntList {
+func (this IntList) Use(e SafeExecutor) IntList {
 	this.client = e
 	return this
 }

@@ -23,9 +23,7 @@ func TestStringFuncs(t *testing.T) {
 		t.Error("Shouldn't 'Set if empty' when not empty")
 	}
 
-	if <-s.Clear() != "Blah" {
-		t.Error("Should still be blah")
-	}
+	<-s.Delete()
 
 	if _, ok := <-s.Get(); ok {
 		t.Error("Getting something after we clear")

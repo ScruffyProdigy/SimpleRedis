@@ -4,7 +4,7 @@ type Bits struct {
 	Key
 }
 
-func newBits(client Executor, key string) Bits {
+func newBits(client SafeExecutor, key string) Bits {
 	return Bits{
 		newKey(client, key),
 	}
@@ -27,54 +27,38 @@ func (this Bits) SetTo(index int, on bool) <-chan bool {
 }
 
 func (this Bits) On(index int) <-chan bool {
-	command, output := newBoolCommand(this.args("setbit", itoa(index), "1"))
-	this.Execute(command)
-	return output
+	return BoolCommand(this, this.args("setbit", itoa(index), "1"))
 }
 
 func (this Bits) Off(index int) <-chan bool {
-	command, output := newBoolCommand(this.args("setbit", itoa(index), "0"))
-	this.Execute(command)
-	return output
+	return BoolCommand(this, this.args("setbit", itoa(index), "0"))
 }
 
 func (this Bits) Get(index int) <-chan bool {
-	command, output := newBoolCommand(this.args("getbit", itoa(index)))
-	this.Execute(command)
-	return output
+	return BoolCommand(this, this.args("getbit", itoa(index)))
 }
 
 func (this Bits) Count(start, end int) <-chan int {
-	command, output := newIntCommand(this.args("bitcount"))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("bitcount"))
 }
 
 func (this Bits) And(otherKey, resultKey Bits) <-chan int {
-	command, output := newIntCommand([]string{"BITOP", "AND", resultKey.key, this.key, otherKey.key})
-	this.Execute(command)
-	return output
+	return IntCommand(this, []string{"BITOP", "AND", resultKey.key, this.key, otherKey.key})
 }
 
 func (this Bits) Or(otherKey, resultKey Bits) <-chan int {
-	command, output := newIntCommand([]string{"BITOP", "OR", resultKey.key, this.key, otherKey.key})
-	this.Execute(command)
-	return output
+	return IntCommand(this, []string{"BITOP", "OR", resultKey.key, this.key, otherKey.key})
 }
 
 func (this Bits) Xor(otherKey, resultKey Bits) <-chan int {
-	command, output := newIntCommand([]string{"BITOP", "XOR", resultKey.key, this.key, otherKey.key})
-	this.Execute(command)
-	return output
+	return IntCommand(this, []string{"BITOP", "XOR", resultKey.key, this.key, otherKey.key})
 }
 
 func (this Bits) Not(resultKey Bits) <-chan int {
-	command, output := newIntCommand([]string{"BITOP", "NOT", resultKey.key, this.key})
-	this.Execute(command)
-	return output
+	return IntCommand(this, []string{"BITOP", "NOT", resultKey.key, this.key})
 }
 
-func (this Bits) Use(e Executor) Bits {
+func (this Bits) Use(e SafeExecutor) Bits {
 	this.client = e
 	return this
 }

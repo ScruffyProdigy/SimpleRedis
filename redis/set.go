@@ -4,7 +4,7 @@ type Set struct {
 	SortableKey
 }
 
-func newSet(client Executor, key string) Set {
+func newSet(client SafeExecutor, key string) Set {
 	return Set{
 		newSortableKey(client, key),
 	}
@@ -20,90 +20,62 @@ func (this Set) IsValid() <-chan bool {
 }
 
 func (this Set) Add(item string) <-chan bool {
-	command, output := newBoolCommand(this.args("sadd", item))
-	this.Execute(command)
-	return output
+	return BoolCommand(this, this.args("sadd", item))
 }
 
 func (this Set) Remove(item string) <-chan bool {
-	command, output := newBoolCommand(this.args("srem", item))
-	this.Execute(command)
-	return output
+	return BoolCommand(this, this.args("srem", item))
 }
 
 func (this Set) Members() <-chan []string {
-	command, output := newSliceCommand(this.args("smembers"))
-	this.Execute(command)
-	return output
+	return SliceCommand(this, this.args("smembers"))
 }
 
 func (this Set) IsMember(item string) <-chan bool {
-	command, output := newBoolCommand(this.args("sismember", item))
-	this.Execute(command)
-	return output
+	return BoolCommand(this, this.args("sismember", item))
 }
 
 func (this Set) Size() <-chan int {
-	command, output := newIntCommand(this.args("scard"))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("scard"))
 }
 
 func (this Set) RandomMember() <-chan string {
-	command, output := newStringCommand(this.args("srandmember"))
-	this.Execute(command)
-	return output
+	return StringCommand(this, this.args("srandmember"))
 }
 
 func (this Set) Pop() <-chan string {
-	command, output := newStringCommand(this.args("spop"))
-	this.Execute(command)
-	return output
+	return StringCommand(this, this.args("spop"))
 }
 
 func (this Set) Intersection(otherSet Set) <-chan []string {
-	command, output := newSliceCommand(this.args("sinter", otherSet.key))
-	this.Execute(command)
-	return output
+	return SliceCommand(this, this.args("sinter", otherSet.key))
 }
 
 func (this Set) Union(otherSet Set) <-chan []string {
-	command, output := newSliceCommand(this.args("sunion", otherSet.key))
-	this.Execute(command)
-	return output
+	return SliceCommand(this, this.args("sunion", otherSet.key))
 }
 
 func (this Set) Difference(otherSet Set) <-chan []string {
-	command, output := newSliceCommand(this.args("sdiff", otherSet.key))
-	this.Execute(command)
-	return output
+	return SliceCommand(this, this.args("sdiff", otherSet.key))
 }
 
 func (this Set) StoreIntersectionOf(setA Set, setB Set) <-chan int {
-	command, output := newIntCommand(this.args("sinterstore", setA.key, setB.key))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("sinterstore", setA.key, setB.key))
 }
 
 func (this Set) StoreUnionOf(setA Set, setB Set) <-chan int {
-	command, output := newIntCommand(this.args("sunionstore", setA.key, setB.key))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("sunionstore", setA.key, setB.key))
 }
 
 func (this Set) StoreDifferenceOf(setA Set, setB Set) <-chan int {
-	command, output := newIntCommand(this.args("sdiffstore", setA.key, setB.key))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("sdiffstore", setA.key, setB.key))
 }
 
 func (this Set) MoveMemberTo(newSet Set, item string) <-chan bool {
-	command, output := newBoolCommand(this.args("smove", newSet.key, item))
-	this.Execute(command)
-	return output
+	return BoolCommand(this, this.args("smove", newSet.key, item))
 }
 
-func (this Set) Use(e Executor) Set {
+func (this Set) Use(e SafeExecutor) Set {
 	this.client = e
 	return this
 }

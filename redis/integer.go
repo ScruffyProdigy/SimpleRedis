@@ -4,7 +4,7 @@ type Integer struct {
 	Key
 }
 
-func newInteger(client Executor, key string) Integer {
+func newInteger(client SafeExecutor, key string) Integer {
 	return Integer{
 		newKey(client, key),
 	}
@@ -20,54 +20,38 @@ func (this Integer) IsValid() <-chan bool {
 }
 
 func (this Integer) Set(val int) <-chan nothing {
-	command, output := newNilCommand(this.args("set", itoa(val)))
-	this.Execute(command)
-	return output
+	return NilCommand(this, this.args("set", itoa(val)))
 }
 
 func (this Integer) SetIfEmpty(val int) <-chan bool {
-	command, output := newBoolCommand(this.args("setnx", itoa(val)))
-	this.Execute(command)
-	return output
+	return BoolCommand(this, this.args("setnx", itoa(val)))
 }
 
 func (this Integer) Get() <-chan int {
-	command, output := newIntCommand(this.args("get"))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("get"))
 }
 
 func (this Integer) GetSet(val int) <-chan int {
-	command, output := newIntCommand(this.args("getset", itoa(val)))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("getset", itoa(val)))
 }
 
 func (this Integer) Increment() <-chan int {
-	command, output := newIntCommand(this.args("incr"))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("incr"))
 }
 
 func (this Integer) IncrementBy(val int) <-chan int {
-	command, output := newIntCommand(this.args("incrby", itoa(val)))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("incrby", itoa(val)))
 }
 
 func (this Integer) Decrement() <-chan int {
-	command, output := newIntCommand(this.args("decr"))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("decr"))
 }
 
 func (this Integer) DecrementBy(val int) <-chan int {
-	command, output := newIntCommand(this.args("decrby", itoa(val)))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("decrby", itoa(val)))
 }
 
-func (this Integer) Use(e Executor) Integer {
+func (this Integer) Use(e SafeExecutor) Integer {
 	this.client = e
 	return this
 }

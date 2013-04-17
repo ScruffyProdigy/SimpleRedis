@@ -25,13 +25,6 @@ func DefaultConfiguration() Config {
 	}
 }
 
-var nextID int
-
-type Connection struct {
-	net.Conn
-	id int
-}
-
 type errCallback func(error, string)
 
 func (this errCallback) Call(e error, s string) {
@@ -43,6 +36,7 @@ func (this errCallback) Call(e error, s string) {
 }
 
 type Client struct {
+	nextID      int
 	isClosed    bool
 	pool        chan *Connection     // 	a semaphore of connections to draw from when multiple threads want to connect
 	used        map[*Connection]bool //a set of all connections currently being used
@@ -96,6 +90,16 @@ func (this *Client) Close() {
 	}
 }
 
+func (this Client) Execute(command command) {
+	go this.useConnection(func(conn *Connection) {
+		conn.Execute(command)
+	})
+}
+
+func (this Client) ErrCallback(e error, s string) {
+	this.errCallback.Call(e, s)
+}
+
 func (this *Client) SetErrorCallback(callback func(error, string)) {
 	this.errCallback = errCallback(callback)
 }
@@ -106,16 +110,15 @@ func (this *Client) newConnection() (*Connection, error) {
 		return nil, err
 	}
 
-	//TODO: Make password and DBids work
+	c := &Connection{conn, this.nextID, this}
 
 	if this.config.Password != "" {
-		//		this.UsePassword(config.Password).WithConn(conn)
+		<-NilCommand(c, []string{"AUTH", this.config.Password})
 	}
-	if this.config.DBid != 1 {
-		//		this.UseDatabase(config.DBid).WithConn(conn)		
+	if this.config.DBid != 0 {
+		<-NilCommand(c, []string{"SELECT", itoa(this.config.DBid)})
 	}
-	c := &Connection{conn, nextID}
-	nextID++
+	this.nextID++
 	return c, nil
 }
 

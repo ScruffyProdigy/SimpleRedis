@@ -4,7 +4,7 @@ type FloatSet struct {
 	SortableKey
 }
 
-func newFloatSet(client Executor, key string) FloatSet {
+func newFloatSet(client SafeExecutor, key string) FloatSet {
 	return FloatSet{
 		newSortableKey(client, key),
 	}
@@ -20,138 +20,114 @@ func (this FloatSet) IsValid() <-chan bool {
 }
 
 func (this FloatSet) Add(item float64) <-chan bool {
-	command, output := newBoolCommand(this.args("sadd", ftoa(item)))
-	this.Execute(command)
-	return output
+	return BoolCommand(this, this.args("sadd", ftoa(item)))
 }
 
 func (this FloatSet) Remove(item float64) <-chan bool {
-	command, output := newBoolCommand(this.args("srem", ftoa(item)))
-	this.Execute(command)
-	return output
+	return BoolCommand(this, this.args("srem", ftoa(item)))
 }
 
 func (this FloatSet) Members() <-chan []float64 {
-	command, output := newSliceCommand(this.args("smembers"))
-	this.Execute(command)
+	output := SliceCommand(this, this.args("smembers"))
 	realoutput := make(chan []float64, 1)
 	go func() {
 		defer close(realoutput)
 		if slice, ok := <-output; ok {
-			floats, err := stringsToFloats(slice)
-			if err != nil {
+			if floats, err := stringsToFloats(slice); err != nil {
 				this.client.ErrCallback(err, "smembers")
 				return
+			} else {
+				realoutput <- floats
 			}
-			realoutput <- floats
 		}
 	}()
 	return realoutput
 }
 
 func (this FloatSet) IsMember(item float64) <-chan bool {
-	command, output := newBoolCommand(this.args("sismember", ftoa(item)))
-	this.Execute(command)
-	return output
+	return BoolCommand(this, this.args("sismember", ftoa(item)))
 }
 
 func (this FloatSet) Size() <-chan int {
-	command, output := newIntCommand(this.args("scard"))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("scard"))
 }
 
 func (this FloatSet) RandomMember() <-chan float64 {
-	command, output := newFloatCommand(this.args("srandmember"))
-	this.Execute(command)
-	return output
+	return FloatCommand(this, this.args("srandmember"))
 }
 
 func (this FloatSet) Pop() <-chan float64 {
-	command, output := newFloatCommand(this.args("spop"))
-	this.Execute(command)
-	return output
+	return FloatCommand(this, this.args("spop"))
 }
 
 func (this FloatSet) Intersection(otherSet FloatSet) <-chan []float64 {
-	command, output := newSliceCommand(this.args("sinter", otherSet.key))
-	this.Execute(command)
+	output := SliceCommand(this, this.args("sinter", otherSet.key))
 	realoutput := make(chan []float64, 1)
 	go func() {
 		defer close(realoutput)
 		if slice, ok := <-output; ok {
-			floats, err := stringsToFloats(slice)
-			if err != nil {
+			if floats, err := stringsToFloats(slice); err != nil {
 				this.client.ErrCallback(err, "sinter")
 				return
+			} else {
+				realoutput <- floats
 			}
-			realoutput <- floats
 		}
 	}()
 	return realoutput
 }
 
 func (this FloatSet) Union(otherSet FloatSet) <-chan []float64 {
-	command, output := newSliceCommand(this.args("sunion", otherSet.key))
-	this.Execute(command)
+	output := SliceCommand(this, this.args("sunion", otherSet.key))
 	realoutput := make(chan []float64, 1)
 	go func() {
 		defer close(realoutput)
 		if slice, ok := <-output; ok {
-			floats, err := stringsToFloats(slice)
-			if err != nil {
+			if floats, err := stringsToFloats(slice); err != nil {
 				this.client.ErrCallback(err, "sunion")
 				return
+			} else {
+				realoutput <- floats
 			}
-			realoutput <- floats
 		}
 	}()
 	return realoutput
 }
 
 func (this FloatSet) Difference(otherSet FloatSet) <-chan []float64 {
-	command, output := newSliceCommand(this.args("sdiff", otherSet.key))
-	this.Execute(command)
+	output := SliceCommand(this, this.args("sdiff", otherSet.key))
 	realoutput := make(chan []float64, 1)
 	go func() {
 		defer close(realoutput)
 		if slice, ok := <-output; ok {
-			floats, err := stringsToFloats(slice)
-			if err != nil {
+			if floats, err := stringsToFloats(slice); err != nil {
 				this.client.ErrCallback(err, "sdiff")
 				return
+			} else {
+				realoutput <- floats
 			}
-			realoutput <- floats
 		}
 	}()
 	return realoutput
 }
 
 func (this FloatSet) StoreIntersectionOf(setA FloatSet, setB FloatSet) <-chan int {
-	command, output := newIntCommand(this.args("sinterstore", setA.key, setB.key))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("sinterstore", setA.key, setB.key))
 }
 
 func (this FloatSet) StoreUnionOf(setA FloatSet, setB FloatSet) <-chan int {
-	command, output := newIntCommand(this.args("sunionstore", setA.key, setB.key))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("sunionstore", setA.key, setB.key))
 }
 
 func (this FloatSet) StoreDifferenceOf(setA FloatSet, setB FloatSet) <-chan int {
-	command, output := newIntCommand(this.args("sdiffstore", setA.key, setB.key))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("sdiffstore", setA.key, setB.key))
 }
 
 func (this FloatSet) MoveMemberTo(newSet FloatSet, item float64) <-chan bool {
-	command, output := newBoolCommand(this.args("smove", newSet.key, ftoa(item)))
-	this.Execute(command)
-	return output
+	return BoolCommand(this, this.args("smove", newSet.key, ftoa(item)))
 }
 
-func (this FloatSet) Use(e Executor) FloatSet {
+func (this FloatSet) Use(e SafeExecutor) FloatSet {
 	this.client = e
 	return this
 }

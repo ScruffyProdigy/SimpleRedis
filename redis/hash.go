@@ -8,7 +8,7 @@ type Hash struct {
 	Key
 }
 
-func newHash(client Executor, key string) Hash {
+func newHash(client SafeExecutor, key string) Hash {
 	return Hash{
 		newKey(client, key),
 	}
@@ -36,15 +36,11 @@ func (this Hash) Float(key string) HashFloat {
 }
 
 func (this Hash) Size() <-chan int {
-	command, output := newIntCommand(this.args("hlen"))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("hlen"))
 }
 
 func (this Hash) Get() <-chan map[string]string {
-	command, output := newMapCommand(this.args("hgetall"))
-	this.Execute(command)
-	return output
+	return MapCommand(this, this.args("hgetall"))
 }
 
 type HashField struct {
@@ -64,15 +60,11 @@ func (this HashField) args(command string, args ...string) []string {
 }
 
 func (this HashField) Delete() <-chan bool {
-	command, output := newBoolCommand(this.args("hdel"))
-	this.parent.Execute(command)
-	return output
+	return BoolCommand(this.parent, this.args("hdel"))
 }
 
 func (this HashField) Exists() <-chan bool {
-	command, output := newBoolCommand(this.args("hexists"))
-	this.parent.Execute(command)
-	return output
+	return BoolCommand(this.parent, this.args("hexists"))
 }
 
 type HashString struct {
@@ -86,21 +78,15 @@ func newHashString(hash Hash, key string) HashString {
 }
 
 func (this HashString) Get() <-chan string {
-	command, output := newStringCommand(this.args("hget"))
-	this.parent.Execute(command)
-	return output
+	return StringCommand(this.parent, this.args("hget"))
 }
 
 func (this HashString) Set(val string) <-chan bool {
-	command, output := newBoolCommand(this.args("hset", val))
-	this.parent.Execute(command)
-	return output
+	return BoolCommand(this.parent, this.args("hset", val))
 }
 
 func (this HashString) SetIfEmpty(val string) <-chan bool {
-	command, output := newBoolCommand(this.args("hsetnx", val))
-	this.parent.Execute(command)
-	return output
+	return BoolCommand(this.parent, this.args("hsetnx", val))
 }
 
 type HashInteger struct {
@@ -114,33 +100,23 @@ func newHashInteger(hash Hash, key string) HashInteger {
 }
 
 func (this HashInteger) Get() <-chan int {
-	command, output := newIntCommand(this.args("hget"))
-	this.parent.Execute(command)
-	return output
+	return IntCommand(this.parent, this.args("hget"))
 }
 
 func (this HashInteger) Set(val int) <-chan bool {
-	command, output := newBoolCommand(this.args("hset", itoa(val)))
-	this.parent.Execute(command)
-	return output
+	return BoolCommand(this.parent, this.args("hset", itoa(val)))
 }
 
 func (this HashInteger) SetIfEmpty(val int) <-chan bool {
-	command, output := newBoolCommand(this.args("hsetnx", itoa(val)))
-	this.parent.Execute(command)
-	return output
+	return BoolCommand(this.parent, this.args("hsetnx", itoa(val)))
 }
 
 func (this HashInteger) IncrementBy(val int) <-chan int {
-	command, output := newIntCommand(this.args("hincrby", itoa(val)))
-	this.parent.Execute(command)
-	return output
+	return IntCommand(this.parent, this.args("hincrby", itoa(val)))
 }
 
 func (this HashInteger) DecrementBy(val int) <-chan int {
-	command, output := newIntCommand(this.args("hincrby", itoa(-val)))
-	this.parent.Execute(command)
-	return output
+	return IntCommand(this.parent, this.args("hincrby", itoa(-val)))
 }
 
 type HashFloat struct {
@@ -154,36 +130,26 @@ func newHashFloat(hash Hash, key string) HashFloat {
 }
 
 func (this HashFloat) Get() <-chan float64 {
-	command, output := newFloatCommand(this.args("hget"))
-	this.parent.Execute(command)
-	return output
+	return FloatCommand(this.parent, this.args("hget"))
 }
 
 func (this HashFloat) Set(val float64) <-chan bool {
-	command, output := newBoolCommand(this.args("hset", ftoa(val)))
-	this.parent.Execute(command)
-	return output
+	return BoolCommand(this.parent, this.args("hset", ftoa(val)))
 }
 
 func (this HashFloat) SetIfEmpty(val float64) <-chan bool {
-	command, output := newBoolCommand(this.args("hsetnx", ftoa(val)))
-	this.parent.Execute(command)
-	return output
+	return BoolCommand(this.parent, this.args("hsetnx", ftoa(val)))
 }
 
 func (this HashFloat) IncrementBy(val float64) <-chan float64 {
-	command, output := newFloatCommand(this.args("hincrbyfloat", ftoa(val)))
-	this.parent.Execute(command)
-	return output
+	return FloatCommand(this.parent, this.args("hincrbyfloat", ftoa(val)))
 }
 
 func (this HashFloat) DecrementBy(val float64) <-chan float64 {
-	command, output := newFloatCommand(this.args("hincrbyfloat", ftoa(-val)))
-	this.parent.Execute(command)
-	return output
+	return FloatCommand(this.parent, this.args("hincrbyfloat", ftoa(-val)))
 }
 
-func (this Hash) Use(e Executor) Hash {
+func (this Hash) Use(e SafeExecutor) Hash {
 	this.client = e
 	return this
 }

@@ -4,7 +4,7 @@ type IntSet struct {
 	SortableKey
 }
 
-func newIntSet(client Executor, key string) IntSet {
+func newIntSet(client SafeExecutor, key string) IntSet {
 	return IntSet{
 		newSortableKey(client, key),
 	}
@@ -20,20 +20,15 @@ func (this IntSet) IsValid() <-chan bool {
 }
 
 func (this IntSet) Add(item int) <-chan bool {
-	command, output := newBoolCommand(this.args("sadd", itoa(item)))
-	this.Execute(command)
-	return output
+	return BoolCommand(this, this.args("sadd", itoa(item)))
 }
 
 func (this IntSet) Remove(item int) <-chan bool {
-	command, output := newBoolCommand(this.args("srem", itoa(item)))
-	this.Execute(command)
-	return output
+	return BoolCommand(this, this.args("srem", itoa(item)))
 }
 
 func (this IntSet) Members() <-chan []int {
-	command, output := newSliceCommand(this.args("smembers"))
-	this.Execute(command)
+	output := SliceCommand(this, this.args("smembers"))
 	realoutput := make(chan []int, 1)
 	go func() {
 		defer close(realoutput)
@@ -49,32 +44,23 @@ func (this IntSet) Members() <-chan []int {
 }
 
 func (this IntSet) IsMember(item int) <-chan bool {
-	command, output := newBoolCommand(this.args("sismember", itoa(item)))
-	this.Execute(command)
-	return output
+	return BoolCommand(this, this.args("sismember", itoa(item)))
 }
 
 func (this IntSet) Size() <-chan int {
-	command, output := newIntCommand(this.args("scard"))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("scard"))
 }
 
 func (this IntSet) RandomMember() <-chan int {
-	command, output := newIntCommand(this.args("srandmember"))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("srandmember"))
 }
 
 func (this IntSet) Pop() <-chan int {
-	command, output := newIntCommand(this.args("spop"))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("spop"))
 }
 
 func (this IntSet) Intersection(otherSet IntSet) <-chan []int {
-	command, output := newSliceCommand(this.args("sinter", otherSet.key))
-	this.Execute(command)
+	output := SliceCommand(this, this.args("sinter", otherSet.key))
 	realoutput := make(chan []int, 1)
 	go func() {
 		defer close(realoutput)
@@ -90,8 +76,7 @@ func (this IntSet) Intersection(otherSet IntSet) <-chan []int {
 }
 
 func (this IntSet) Union(otherSet IntSet) <-chan []int {
-	command, output := newSliceCommand(this.args("sunion", otherSet.key))
-	this.Execute(command)
+	output := SliceCommand(this, this.args("sunion", otherSet.key))
 	realoutput := make(chan []int, 1)
 	go func() {
 		defer close(realoutput)
@@ -107,8 +92,7 @@ func (this IntSet) Union(otherSet IntSet) <-chan []int {
 }
 
 func (this IntSet) Difference(otherSet IntSet) <-chan []int {
-	command, output := newSliceCommand(this.args("sdiff", otherSet.key))
-	this.Execute(command)
+	output := SliceCommand(this, this.args("sdiff", otherSet.key))
 	realoutput := make(chan []int, 1)
 	go func() {
 		defer close(realoutput)
@@ -124,30 +108,22 @@ func (this IntSet) Difference(otherSet IntSet) <-chan []int {
 }
 
 func (this IntSet) StoreIntersectionOf(setA IntSet, setB IntSet) <-chan int {
-	command, output := newIntCommand(this.args("sinterstore", setA.key, setB.key))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("sinterstore", setA.key, setB.key))
 }
 
 func (this IntSet) StoreUnionOf(setA IntSet, setB IntSet) <-chan int {
-	command, output := newIntCommand(this.args("sunionstore", setA.key, setB.key))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("sunionstore", setA.key, setB.key))
 }
 
 func (this IntSet) StoreDifferenceOf(setA IntSet, setB IntSet) <-chan int {
-	command, output := newIntCommand(this.args("sdiffstore", setA.key, setB.key))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("sdiffstore", setA.key, setB.key))
 }
 
 func (this IntSet) MoveMemberTo(newSet IntSet, item int) <-chan bool {
-	command, output := newBoolCommand(this.args("smove", newSet.key, itoa(item)))
-	this.Execute(command)
-	return output
+	return BoolCommand(this, this.args("smove", newSet.key, itoa(item)))
 }
 
-func (this IntSet) Use(e Executor) IntSet {
+func (this IntSet) Use(e SafeExecutor) IntSet {
 	this.client = e
 	return this
 }

@@ -7,10 +7,10 @@ import (
 
 type Key struct {
 	key    string
-	client Executor
+	client SafeExecutor
 }
 
-func newKey(client Executor, key string) Key {
+func newKey(client SafeExecutor, key string) Key {
 	return Key{
 		key:    key,
 		client: client,
@@ -22,71 +22,51 @@ func (this Key) args(command string, arguments ...string) []string {
 }
 
 func (this Key) Exists() <-chan bool {
-	command, output := newBoolCommand(this.args("exists"))
-	this.Execute(command)
-	return output
+	return BoolCommand(this, this.args("exists"))
 }
 
 func (this Key) Delete() <-chan bool {
-	command, output := newBoolCommand(this.args("del"))
-	this.Execute(command)
-	return output
+	return BoolCommand(this, this.args("del"))
 }
 
 func (this Key) Type() <-chan string {
-	command, output := newStringCommand(this.args("type"))
-	this.Execute(command)
-	return output
+	return StringCommand(this, this.args("type"))
 }
 
 func (this Key) MoveTo(other Key) <-chan nothing {
-	command, output := newNilCommand(this.args("rename", other.key))
-	this.Execute(command)
-	return output
+	return NilCommand(this, this.args("rename", other.key))
 }
 
 func (this Key) MoveToIfEmpty(other Key) <-chan bool {
-	command, output := newBoolCommand(this.args("renamenx", other.key))
-	this.Execute(command)
-	return output
+	return BoolCommand(this, this.args("renamenx", other.key))
 }
 
 func (this Key) ExpireIn(duration time.Duration) <-chan bool {
 	//if the time to expire is in a time range larger than an hour, the number of milliseconds probably is not particularly important, so we can use a regular expire
 	if duration >= time.Hour {
-		command, output := newBoolCommand(this.args("expire", itoa(int(duration/time.Second))))
-		this.Execute(command)
-		return output
+		return BoolCommand(this, this.args("expire", itoa(int(duration/time.Second))))
 	}
 	//otherwise use pexpire to get down to the nearest millisecond
-	command, output := newBoolCommand(this.args("pexpire", itoa(int(duration/time.Millisecond))))
-	this.Execute(command)
-	return output
+	return BoolCommand(this, this.args("pexpire", itoa(int(duration/time.Millisecond))))
 }
 
 func (this Key) ExpireAt(timestamp time.Time) <-chan bool {
-	command, output := newBoolCommand(this.args("expireat", itoa(int(timestamp.Unix()))))
-	this.Execute(command)
-	return output
+	return BoolCommand(this, this.args("expireat", itoa(int(timestamp.Unix()))))
 }
 
 func (this Key) SecondsToLive() <-chan int {
-	command, output := newIntCommand(this.args("ttl"))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("ttl"))
 }
 
 func (this Key) MillisecondsToLive() <-chan int {
-	command, output := newIntCommand(this.args("pttl"))
-	this.Execute(command)
-	return output
+	return IntCommand(this, this.args("pttl"))
 }
 
 func (this Key) Execute(command command) {
 	this.client.Execute(command)
 }
 
-func (this Key) Use(e Executor) Key {
+func (this Key) Use(e SafeExecutor) Key {
 	this.client = e
 	return this
 }

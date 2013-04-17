@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"io"
-	"strings"
 
 //	"bufio"
 )
@@ -34,57 +33,12 @@ type command interface {
 }
 
 type Executor interface {
-	Execute(command) error
+	Execute(command)
+}
+
+type SafeExecutor interface {
+	Executor
 	ErrCallback(error, string)
-}
-
-func (this Client) Execute(command command) error {
-	go this.useConnection(func(conn *Connection) {
-		err := conn.Execute(command)
-		if err != nil {
-			// we are in a separate routine and cannot return the error
-			// use the callback instead
-			this.errCallback.Call(err, strings.Join(command.arguments(), " "))
-		}
-	})
-	return nil
-}
-
-func (this Client) ErrCallback(e error, s string) {
-	this.errCallback.Call(e, s)
-}
-
-func (this Connection) input(command command) error {
-	comm, err := buildCommand(command.arguments())
-	if err != nil {
-		return err
-	}
-
-	_, err = this.Write(comm)
-	return err
-}
-
-func (this Connection) output(command command) error {
-	res, err := getResponse(this)
-	if err != nil {
-		return err
-	}
-
-	return command.callback()(res)
-}
-
-func (this Connection) Execute(command command) error {
-	err := this.input(command)
-	if err != nil {
-		return err
-	}
-
-	err = this.output(command)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func buildCommand(arguments []string) ([]byte, error) {
@@ -243,21 +197,22 @@ BoolCommand - the command type used when a boolean response is expected
 
 */
 
-type BoolCommand struct {
+type boolCommand struct {
 	args   []string
 	output chan<- bool
 }
 
-func newBoolCommand(args []string) (command, <-chan bool) {
+func BoolCommand(e Executor, args []string) <-chan bool {
 	c := make(chan bool, 1)
-	return BoolCommand{args, c}, c
+	e.Execute(boolCommand{args, c})
+	return c
 }
 
-func (this BoolCommand) arguments() []string {
+func (this boolCommand) arguments() []string {
 	return this.args
 }
 
-func (this BoolCommand) callback() func(*response) error {
+func (this boolCommand) callback() func(*response) error {
 	return func(r *response) error {
 		defer close(this.output)
 		if r != nil {
@@ -273,21 +228,22 @@ IntCommand - the command type used when an int response is expected
 
 */
 
-type IntCommand struct {
+type intCommand struct {
 	args   []string
 	output chan<- int
 }
 
-func newIntCommand(args []string) (command, <-chan int) {
+func IntCommand(e Executor, args []string) <-chan int {
 	c := make(chan int, 1)
-	return IntCommand{args, c}, c
+	e.Execute(intCommand{args, c})
+	return c
 }
 
-func (this IntCommand) arguments() []string {
+func (this intCommand) arguments() []string {
 	return this.args
 }
 
-func (this IntCommand) callback() func(*response) error {
+func (this intCommand) callback() func(*response) error {
 	return func(r *response) error {
 		defer close(this.output)
 		if r != nil {
@@ -307,21 +263,22 @@ FloatCommand - the command type used when a float response is expected
 
 */
 
-type FloatCommand struct {
+type floatCommand struct {
 	args   []string
 	output chan<- float64
 }
 
-func newFloatCommand(args []string) (command, <-chan float64) {
+func FloatCommand(e Executor, args []string) <-chan float64 {
 	c := make(chan float64, 1)
-	return FloatCommand{args, c}, c
+	e.Execute(floatCommand{args, c})
+	return c
 }
 
-func (this FloatCommand) arguments() []string {
+func (this floatCommand) arguments() []string {
 	return this.args
 }
 
-func (this FloatCommand) callback() func(*response) error {
+func (this floatCommand) callback() func(*response) error {
 	return func(r *response) error {
 		defer close(this.output)
 		if r != nil {
@@ -341,21 +298,22 @@ StringCommand - the command type used when a string response is expected
 
 */
 
-type StringCommand struct {
+type stringCommand struct {
 	args   []string
 	output chan<- string
 }
 
-func newStringCommand(args []string) (command, <-chan string) {
+func StringCommand(e Executor, args []string) <-chan string {
 	c := make(chan string, 1)
-	return StringCommand{args, c}, c
+	e.Execute(stringCommand{args, c})
+	return c
 }
 
-func (this StringCommand) arguments() []string {
+func (this stringCommand) arguments() []string {
 	return this.args
 }
 
-func (this StringCommand) callback() func(*response) error {
+func (this stringCommand) callback() func(*response) error {
 	return func(r *response) error {
 		defer close(this.output)
 
@@ -372,21 +330,22 @@ SliceCommand - the command type used when a []string response is expected
 
 */
 
-type SliceCommand struct {
+type sliceCommand struct {
 	args   []string
 	output chan<- []string
 }
 
-func newSliceCommand(args []string) (command, <-chan []string) {
+func SliceCommand(e Executor, args []string) <-chan []string {
 	c := make(chan []string, 1)
-	return SliceCommand{args, c}, c
+	e.Execute(sliceCommand{args, c})
+	return c
 }
 
-func (this SliceCommand) arguments() []string {
+func (this sliceCommand) arguments() []string {
 	return this.args
 }
 
-func (this SliceCommand) callback() func(*response) error {
+func (this sliceCommand) callback() func(*response) error {
 	return func(r *response) error {
 		defer close(this.output)
 
@@ -414,21 +373,22 @@ SliceCommand will return an empty string, but if you need to differentiate betwe
 
 */
 
-type MaybeSliceCommand struct {
+type maybeSliceCommand struct {
 	args   []string
 	output chan<- []*string
 }
 
-func newMaybeSliceCommand(args []string) (command, <-chan []*string) {
+func MaybeSliceCommand(e Executor, args []string) <-chan []*string {
 	c := make(chan []*string, 1)
-	return MaybeSliceCommand{args, c}, c
+	e.Execute(maybeSliceCommand{args, c})
+	return c
 }
 
-func (this MaybeSliceCommand) arguments() []string {
+func (this maybeSliceCommand) arguments() []string {
 	return this.args
 }
 
-func (this MaybeSliceCommand) callback() func(*response) error {
+func (this maybeSliceCommand) callback() func(*response) error {
 	return func(r *response) error {
 		defer close(this.output)
 		if r != nil {
@@ -452,21 +412,22 @@ MapCommand - the command type used when a map[string]string response is expected
 
 */
 
-type MapCommand struct {
+type mapCommand struct {
 	args   []string
 	output chan<- map[string]string
 }
 
-func newMapCommand(args []string) (command, <-chan map[string]string) {
+func MapCommand(e Executor, args []string) <-chan map[string]string {
 	c := make(chan map[string]string, 1)
-	return MapCommand{args, c}, c
+	e.Execute(mapCommand{args, c})
+	return c
 }
 
-func (this MapCommand) arguments() []string {
+func (this mapCommand) arguments() []string {
 	return this.args
 }
 
-func (this MapCommand) callback() func(*response) error {
+func (this mapCommand) callback() func(*response) error {
 	return func(r *response) error {
 		defer close(this.output)
 		if r != nil {
@@ -491,21 +452,22 @@ NilCommand - the command type used when no response is expected
 type nothing struct {
 }
 
-type NilCommand struct {
+type nilCommand struct {
 	args   []string
 	output chan<- nothing
 }
 
-func newNilCommand(args []string) (command, <-chan nothing) {
+func NilCommand(e Executor, args []string) <-chan nothing {
 	c := make(chan nothing, 1)
-	return NilCommand{args, c}, c
+	e.Execute(nilCommand{args, c})
+	return c
 }
 
-func (this NilCommand) arguments() []string {
+func (this nilCommand) arguments() []string {
 	return this.args
 }
 
-func (this NilCommand) callback() func(*response) error {
+func (this nilCommand) callback() func(*response) error {
 	return func(r *response) error {
 		defer close(this.output)
 		this.output <- nothing{}
