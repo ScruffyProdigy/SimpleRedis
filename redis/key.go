@@ -51,8 +51,15 @@ func (this Key) MoveToIfEmpty(other Key) <-chan bool {
 	return output
 }
 
-func (this Key) ExpireIn(seconds time.Duration) <-chan bool {
-	command, output := newBoolCommand(this.args("expire", itoa(int(seconds))))
+func (this Key) ExpireIn(duration time.Duration) <-chan bool {
+	//if the time to expire is in a time range larger than an hour, the number of milliseconds probably is not particularly important, so we can use a regular expire
+	if duration >= time.Hour {
+		command, output := newBoolCommand(this.args("expire", itoa(int(duration/time.Second))))
+		this.Execute(command)
+		return output
+	}
+	//otherwise use pexpire to get down to the nearest millisecond
+	command, output := newBoolCommand(this.args("pexpire", itoa(int(duration/time.Millisecond))))
 	this.Execute(command)
 	return output
 }
@@ -63,8 +70,14 @@ func (this Key) ExpireAt(timestamp time.Time) <-chan bool {
 	return output
 }
 
-func (this Key) TimeToLive() <-chan int {
+func (this Key) SecondsToLive() <-chan int {
 	command, output := newIntCommand(this.args("ttl"))
+	this.Execute(command)
+	return output
+}
+
+func (this Key) MillisecondsToLive() <-chan int {
+	command, output := newIntCommand(this.args("pttl"))
 	this.Execute(command)
 	return output
 }
