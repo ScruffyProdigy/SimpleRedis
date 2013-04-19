@@ -5,10 +5,7 @@ import (
 )
 
 func TestPipeline(t *testing.T) {
-	r, err := New(DefaultConfiguration())
-	if err != nil {
-		t.Fatal("Can't load redis")
-	}
+	r := GetRedis(t)
 	defer r.Close()
 
 	a := r.String("Pipeline_Test_A")
@@ -50,10 +47,7 @@ func TestPipeline(t *testing.T) {
 }
 
 func TestTransaction(t *testing.T) {
-	r, err := New(DefaultConfiguration())
-	if err != nil {
-		t.Fatal("Can't load redis")
-	}
+	r := GetRedis(t)
 	defer r.Close()
 
 	a := r.String("Transaction_Test_A")
@@ -64,9 +58,7 @@ func TestTransaction(t *testing.T) {
 	<-b.Delete()
 	<-c.Delete()
 
-	print("A")
 	r.Transaction(func(e SafeExecutor) {
-		print("B")
 		a.Use(e).Set("A")
 		b.Use(e).Set("B")
 		c.Use(e).Set("C")
@@ -79,9 +71,7 @@ func TestTransaction(t *testing.T) {
 		if _, ok := <-c.Get(); ok {
 			t.Error("c should not be set yet")
 		}
-		print("C")
 	})
-	print("D")
 
 	if <-a.Get() != "A" {
 		t.Error("a should be A")
@@ -96,7 +86,6 @@ func TestTransaction(t *testing.T) {
 	}
 
 	r.Transaction(func(e SafeExecutor) {
-		print("E")
 		a.Use(e).Set("D")
 		b.Use(e).Set("E")
 		c.Use(e).Set("F")
@@ -110,10 +99,10 @@ func TestTransaction(t *testing.T) {
 		if <-c.Get() != "C" {
 			t.Error("c should be C")
 		}
-		print("F")
+
 		panic("let's just discard these actions")
 	})
-	print("G")
+
 	if <-a.Get() != "A" {
 		t.Error("a should be A")
 	}

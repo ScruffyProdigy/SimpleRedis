@@ -114,7 +114,7 @@ func (this *Sorter) GetInts() <-chan []int {
 		if strings, ok := <-output; ok {
 			ints, err := stringsToInts(strings)
 			if err != nil {
-				this.key.client.ErrCallback(err, "sorting ints")
+				this.key.client.errCallback(err, "sorting ints")
 			}
 			realoutput <- ints
 		}
@@ -130,7 +130,7 @@ func (this *Sorter) GetFloats() <-chan []float64 {
 		if strings, ok := <-output; ok {
 			floats, err := stringsToFloats(strings)
 			if err != nil {
-				this.key.client.ErrCallback(err, "sorting floats")
+				this.key.client.errCallback(err, "sorting floats")
 			}
 			realoutput <- floats
 		}
@@ -154,7 +154,7 @@ func (this *Sorter) GetIntsFrom(pattern string) <-chan []*int {
 				if str != nil {
 					j, err := atoi(*str)
 					if err != nil {
-						this.key.client.ErrCallback(err, "sorting ints")
+						this.key.client.errCallback(err, "sorting ints")
 					}
 					ints[i] = &j
 				}
@@ -176,7 +176,7 @@ func (this *Sorter) GetFloatsFrom(pattern string) <-chan []*float64 {
 				if str != nil {
 					j, err := atof(*str)
 					if err != nil {
-						this.key.client.ErrCallback(err, "sorting floats")
+						this.key.client.errCallback(err, "sorting floats")
 					}
 					floats[i] = &j
 				}

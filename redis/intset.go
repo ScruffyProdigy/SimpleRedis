@@ -35,7 +35,7 @@ func (this IntSet) Members() <-chan []int {
 		if slice, ok := <-output; ok {
 			ints, err := stringsToInts(slice)
 			if err != nil {
-				this.client.ErrCallback(err, "smembers")
+				this.client.errCallback(err, "smembers")
 			}
 			realoutput <- ints
 		}
@@ -67,7 +67,7 @@ func (this IntSet) Intersection(otherSet IntSet) <-chan []int {
 		if slice, ok := <-output; ok {
 			ints, err := stringsToInts(slice)
 			if err != nil {
-				this.client.ErrCallback(err, "sinter")
+				this.client.errCallback(err, "sinter")
 			}
 			realoutput <- ints
 		}
@@ -83,7 +83,7 @@ func (this IntSet) Union(otherSet IntSet) <-chan []int {
 		if slice, ok := <-output; ok {
 			ints, err := stringsToInts(slice)
 			if err != nil {
-				this.client.ErrCallback(err, "sunion")
+				this.client.errCallback(err, "sunion")
 			}
 			realoutput <- ints
 		}
@@ -99,7 +99,7 @@ func (this IntSet) Difference(otherSet IntSet) <-chan []int {
 		if slice, ok := <-output; ok {
 			ints, err := stringsToInts(slice)
 			if err != nil {
-				this.client.ErrCallback(err, "sdiff")
+				this.client.errCallback(err, "sdiff")
 			}
 			realoutput <- ints
 		}

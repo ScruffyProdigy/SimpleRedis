@@ -44,7 +44,7 @@ func getError(rec interface{}) error {
 	return errors.New("Unknown Error:" /*+fmt.Sprintf(rec)*/)
 }
 
-func messageLoop(conn *Connection, errCallback errCallback) <-chan string {
+func messageLoop(conn *Connection, errCallback errCallbackFunc) <-chan string {
 	output := make(chan string, messageBufferSize)
 	go func() {
 		defer close(output)
@@ -109,7 +109,7 @@ func (this Channel) blockingSubscription(subscription func(<-chan string), sub, 
 			conn.input(nilCommand{this.args(unsub), make(chan nothing)})
 		}()
 
-		output := messageLoop(conn, this.client.errCallback)
+		output := messageLoop(conn, this.client.fErrCallback)
 		subscription(output)
 
 		return

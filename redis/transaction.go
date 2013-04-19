@@ -3,29 +3,29 @@ package redis
 import ()
 
 type pipe struct {
-	commands    []command
-	errCallback errCallback
+	commands     []command
+	fErrCallback errCallbackFunc
 }
 
 func (this *pipe) Execute(command command) {
 	this.commands = append(this.commands, command)
 }
 
-func (this *pipe) ErrCallback(err error, s string) {
-	this.errCallback.Call(err, s)
+func (this *pipe) errCallback(err error, s string) {
+	this.fErrCallback.Call(err, s)
 }
 
 func (this Client) piping(callback func(SafeExecutor) bool, queued bool) {
 	p := new(pipe)
 	p.commands = make([]command, 0, 5)
-	p.errCallback = this.errCallback
+	p.fErrCallback = this.fErrCallback
 	var result bool
 	defer func() {
 		var bundle []byte
 		for _, command := range p.commands {
 			comm, err := buildCommand(command.arguments())
 			if err != nil {
-				this.errCallback.Call(err, "piping")
+				this.errCallback(err, "piping")
 			}
 			bundle = append(bundle, comm...)
 		}

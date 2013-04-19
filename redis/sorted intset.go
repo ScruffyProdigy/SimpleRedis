@@ -47,7 +47,7 @@ func (this SortedIntSet) IndexedBetween(start, stop int) <-chan []int {
 		defer close(realoutput)
 		if strings, ok := <-output; ok {
 			if ints, err := stringsToInts(strings); err != nil {
-				this.client.ErrCallback(err, "zrange")
+				this.client.errCallback(err, "zrange")
 			} else {
 				realoutput <- ints
 			}
@@ -63,7 +63,7 @@ func (this SortedIntSet) ReverseIndexedBetween(start, stop int) <-chan []int {
 		defer close(realoutput)
 		if strings, ok := <-output; ok {
 			if ints, err := stringsToInts(strings); err != nil {
-				this.client.ErrCallback(err, "zrevrange")
+				this.client.errCallback(err, "zrevrange")
 			} else {
 				realoutput <- ints
 			}
@@ -171,7 +171,7 @@ func (this *SortedIntSetRange) Get() <-chan []int {
 		defer close(realoutput)
 		if strings, ok := <-output; ok {
 			if ints, err := stringsToInts(strings); err != nil {
-				this.key.client.ErrCallback(err, "sorting ints")
+				this.key.client.errCallback(err, "sorting ints")
 			} else {
 				realoutput <- ints
 			}
@@ -209,12 +209,12 @@ func (this *SortedIntSetRange) GetWithScores() <-chan map[int]float64 {
 			for k, v := range midway {
 				index, err := atoi(k)
 				if err != nil {
-					this.key.client.ErrCallback(err, "sorting with scores (key)")
+					this.key.client.errCallback(err, "sorting with scores (key)")
 				}
 
 				result[index], err = atof(v)
 				if err != nil {
-					this.key.client.ErrCallback(err, "sorting with scores (value)")
+					this.key.client.errCallback(err, "sorting with scores (value)")
 				}
 			}
 			realoutput <- result

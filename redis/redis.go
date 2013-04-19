@@ -25,9 +25,9 @@ func DefaultConfiguration() Config {
 	}
 }
 
-type errCallback func(error, string)
+type errCallbackFunc func(error, string)
 
-func (this errCallback) Call(e error, s string) {
+func (this errCallbackFunc) Call(e error, s string) {
 	if this == nil {
 		panic(errors.New(e.Error() + ":" + s))
 	} else {
@@ -36,15 +36,34 @@ func (this errCallback) Call(e error, s string) {
 }
 
 type Client struct {
-	nextID      int
-	isClosed    bool
-	pool        chan *Connection     // 	a semaphore of connections to draw from when multiple threads want to connect
-	used        map[*Connection]bool //a set of all connections currently being used
-	config      Config               //	connection details, so we know how to connect to redis
-	errCallback errCallback          //	a callback function - since we operate in a separate goroutine, we can't return an error, instead we call this function sending it the error, and the command we tried to issue
+	nextID       int
+	isClosed     bool
+	pool         chan *Connection     // 	a semaphore of connections to draw from when multiple threads want to connect
+	used         map[*Connection]bool //a set of all connections currently being used
+	config       Config               //	connection details, so we know how to connect to redis
+	fErrCallback errCallbackFunc      //	a callback function - since we operate in a separate goroutine, we can't return an error, instead we call this function sending it the error, and the command we tried to issue
 }
 
-func New(config Config) (*Client, error) {
+func New(config Config) (r *Client, e error) {
+	//user has not had a chance to set an error callback at this point
+	//and we don't actually do anything in a separate thread yet
+	//so we should exit gracefully if an error happens during load
+	defer func() {
+		rec := recover()
+		if rec != nil {
+			if err, iserr := rec.(error); iserr {
+				r = nil
+				e = err
+			} else if str, isstr := rec.(string); isstr {
+				r = nil
+				e = errors.New(str)
+			} else {
+				r = nil
+				e = errors.New("Unknown Error")
+			}
+		}
+	}()
+
 	this := new(Client)
 	this.config = config
 
@@ -96,12 +115,12 @@ func (this Client) Execute(command command) {
 	})
 }
 
-func (this Client) ErrCallback(e error, s string) {
-	this.errCallback.Call(e, s)
+func (this Client) errCallback(e error, s string) {
+	this.fErrCallback.Call(e, s)
 }
 
 func (this *Client) SetErrorCallback(callback func(error, string)) {
-	this.errCallback = errCallback(callback)
+	this.fErrCallback = errCallbackFunc(callback)
 }
 
 func (this *Client) newConnection() (*Connection, error) {
@@ -140,7 +159,7 @@ func (this *Client) useConnection(callback func(*Connection)) {
 func (this *Client) useNewConnection(callback func(*Connection)) {
 	conn, err := this.newConnection()
 	if err != nil {
-		this.errCallback.Call(err, "new connection")
+		this.errCallback(err, "new connection")
 	}
 
 	defer func() {

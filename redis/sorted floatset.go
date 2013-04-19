@@ -49,7 +49,7 @@ func (this SortedFloatSet) IndexedBetween(start, stop int) <-chan []float64 {
 		defer close(realoutput)
 		if midway, ok := <-output; ok {
 			if floats, err := stringsToFloats(midway); err != nil {
-				this.client.ErrCallback(err, "zrange")
+				this.client.errCallback(err, "zrange")
 			} else {
 				realoutput <- floats
 			}
@@ -65,7 +65,7 @@ func (this SortedFloatSet) ReverseIndexedBetween(start, stop int) <-chan []float
 		defer close(realoutput)
 		if midway, ok := <-output; ok {
 			if floats, err := stringsToFloats(midway); err != nil {
-				this.client.ErrCallback(err, "zrevrange")
+				this.client.errCallback(err, "zrevrange")
 				return
 			} else {
 				realoutput <- floats
@@ -175,7 +175,7 @@ func (this *SortedFloatSetRange) Get() <-chan []float64 {
 		if strings, ok := <-output; ok {
 			floats, err := stringsToFloats(strings)
 			if err != nil {
-				this.key.client.ErrCallback(err, "sort by score")
+				this.key.client.errCallback(err, "sort by score")
 				return
 			}
 			realoutput <- floats
@@ -212,13 +212,13 @@ func (this *SortedFloatSetRange) GetWithScores() <-chan map[float64]float64 {
 			for k, v := range midway {
 				fk, err := atof(k)
 				if err != nil {
-					this.key.client.ErrCallback(err, "sorting with scores (key)")
+					this.key.client.errCallback(err, "sorting with scores (key)")
 					return
 				}
 
 				fv, err := atof(v)
 				if err != nil {
-					this.key.client.ErrCallback(err, "sorting with scores (value)")
+					this.key.client.errCallback(err, "sorting with scores (value)")
 					return
 				}
 

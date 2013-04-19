@@ -31,7 +31,7 @@ func (this Connection) output(command command) error {
 }
 
 func (this Connection) Error(e error, c command) {
-	this.client.ErrCallback(e, strings.Join(c.arguments(), " "))
+	this.client.errCallback(e, strings.Join(c.arguments(), " "))
 }
 
 func (this Connection) Execute(command command) {

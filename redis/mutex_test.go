@@ -6,10 +6,7 @@ import (
 )
 
 func TestMutex(t *testing.T) {
-	r, err := New(DefaultConfiguration())
-	if err != nil {
-		t.Fatal("Can't load redis")
-	}
+	r := GetRedis(t)
 	defer r.Close()
 
 	m := r.Mutex("Test_Mutex")
@@ -87,10 +84,7 @@ func TestMutex(t *testing.T) {
 }
 
 func TestSemaphore(t *testing.T) {
-	r, err := New(DefaultConfiguration())
-	if err != nil {
-		t.Fatal("Can't load redis")
-	}
+	r := GetRedis(t)
 	defer r.Close()
 
 	m := r.Semaphore("Test_Semaphore", 3)

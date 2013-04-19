@@ -57,7 +57,7 @@ func (this IntList) BlockUntilLeftPopWithTimeout(timeout int) <-chan int {
 		defer close(realoutput)
 		if slice, ok := <-output; ok {
 			if res, err := atoi(slice[1]); err != nil {
-				this.client.ErrCallback(err, "blpop")
+				this.client.errCallback(err, "blpop")
 				return
 			} else {
 				realoutput <- res
@@ -84,7 +84,7 @@ func (this IntList) BlockUntilRightPopWithTimeout(timeout int) <-chan int {
 		defer close(realoutput)
 		if slice, ok := <-output; ok {
 			if res, err := atoi(slice[1]); err != nil {
-				this.client.ErrCallback(err, "brpop")
+				this.client.errCallback(err, "brpop")
 			} else {
 				realoutput <- res
 			}
@@ -128,7 +128,7 @@ func (this IntList) GetFromRange(left, right int) <-chan []int {
 		defer close(realoutput)
 		if slice, ok := <-output; ok {
 			if ints, err := stringsToInts(slice); err != nil {
-				this.client.ErrCallback(err, "lrange")
+				this.client.errCallback(err, "lrange")
 			} else {
 				realoutput <- ints
 			}

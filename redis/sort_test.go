@@ -5,10 +5,7 @@ import (
 )
 
 func TestSorting(t *testing.T) {
-	r, err := New(DefaultConfiguration())
-	if err != nil {
-		t.Fatal("Can't load redis")
-	}
+	r := GetRedis(t)
 	defer r.Close()
 
 	//we have a lot to test here

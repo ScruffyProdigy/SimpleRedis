@@ -38,37 +38,36 @@ type Executor interface {
 
 type SafeExecutor interface {
 	Executor
-	ErrCallback(error, string)
+	errCallback(error, string)
 }
 
 func buildCommand(arguments []string) ([]byte, error) {
 	buf := bytes.NewBuffer(nil)
-	var err error
 
-	if err = buf.WriteByte(isMultibulk); err != nil {
+	if err := buf.WriteByte(isMultibulk); err != nil {
 		return nil, err
 	}
-	if _, err = buf.WriteString(itoa(len(arguments))); err != nil {
+	if _, err := buf.WriteString(itoa(len(arguments))); err != nil {
 		return nil, err
 	}
-	if _, err = buf.Write(delimiter); err != nil {
+	if _, err := buf.Write(delimiter); err != nil {
 		return nil, err
 	}
 
 	for _, arg := range arguments {
-		if err = buf.WriteByte(isBulk); err != nil {
+		if err := buf.WriteByte(isBulk); err != nil {
 			return nil, err
 		}
-		if _, err = buf.WriteString(itoa(len(arg))); err != nil {
+		if _, err := buf.WriteString(itoa(len(arg))); err != nil {
 			return nil, err
 		}
-		if _, err = buf.Write(delimiter); err != nil {
+		if _, err := buf.Write(delimiter); err != nil {
 			return nil, err
 		}
-		if _, err = buf.WriteString(arg); err != nil {
+		if _, err := buf.WriteString(arg); err != nil {
 			return nil, err
 		}
-		if _, err = buf.Write(delimiter); err != nil {
+		if _, err := buf.Write(delimiter); err != nil {
 			return nil, err
 		}
 	}

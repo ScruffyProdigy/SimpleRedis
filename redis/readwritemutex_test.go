@@ -16,10 +16,7 @@ const writer_interval = 5
 const writer_time = 15
 
 func TestReadWriteMutices(t *testing.T) {
-	r, err := New(DefaultConfiguration())
-	if err != nil {
-		t.Fatal("Can't load redis")
-	}
+	r := GetRedis(t)
 	defer r.Close()
 
 	rw := r.ReadWriteMutex("Test_ReadWriteMutex", reader_max)

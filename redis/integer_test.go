@@ -5,10 +5,7 @@ import (
 )
 
 func TestIntFuncs(t *testing.T) {
-	r, err := New(DefaultConfiguration())
-	if err != nil {
-		t.Fatal("Can't Load Redis")
-	}
+	r := GetRedis(t)
 	defer r.Close()
 
 	i := r.Integer("Test_Integer")

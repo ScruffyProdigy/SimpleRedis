@@ -171,7 +171,7 @@ func (this *SortedSetRange) GetWithScores() <-chan map[string]float64 {
 				var err error
 				result[k], err = atof(v)
 				if err != nil {
-					this.key.client.ErrCallback(err, "sorting with scores")
+					this.key.client.errCallback(err, "sorting with scores")
 				}
 			}
 			realoutput <- result

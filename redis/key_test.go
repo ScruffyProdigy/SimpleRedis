@@ -6,10 +6,7 @@ import (
 )
 
 func TestKeys(t *testing.T) {
-	r, err := New(DefaultConfiguration())
-	if err != nil {
-		t.Fatal("Can't load redis")
-	}
+	r := GetRedis(t)
 	defer r.Close()
 
 	str := r.String("Test_Key")

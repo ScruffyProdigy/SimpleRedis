@@ -5,10 +5,7 @@ import (
 )
 
 func TestSortedIntSets(t *testing.T) {
-	r, err := New(DefaultConfiguration())
-	if err != nil {
-		t.Fatal("Can't load redis")
-	}
+	r := GetRedis(t)
 	defer r.Close()
 
 	ss := r.SortedIntSet("Test_SortedIntSet")

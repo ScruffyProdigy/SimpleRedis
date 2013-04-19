@@ -5,10 +5,7 @@ import (
 )
 
 func TestFloatFuncs(t *testing.T) {
-	r, err := New(DefaultConfiguration())
-	if err != nil {
-		t.Fatal("Can't load redis")
-	}
+	r := GetRedis(t)
 	defer r.Close()
 
 	f := r.Float("Test_Float")
