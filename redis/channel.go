@@ -2,7 +2,6 @@ package redis
 
 import (
 	"errors"
-	//	"fmt"
 	"io"
 )
 
@@ -34,22 +33,14 @@ func (this *subscription) Close() error {
 	return nil
 }
 
-func getError(rec interface{}) error {
-	if err, ok := rec.(error); ok {
-		return err
-	}
-	if str, ok := rec.(string); ok {
-		return errors.New(str)
-	}
-	return errors.New("Unknown Error:" /*+fmt.Sprintf(rec)*/)
-}
-
 func messageLoop(conn *Connection, errCallback errCallbackFunc) <-chan string {
 	output := make(chan string, messageBufferSize)
 	go func() {
 		defer close(output)
 		defer func() {
-			recover()
+			if rec := recover(); rec != nil {
+				errCallback(getError(rec), "Closing a Channel")
+			}
 		}()
 		working := true
 		for working {
@@ -100,18 +91,13 @@ func (this Channel) PatternSubscribe(action func(string)) (startSignal <-chan no
 
 func (this Channel) blockingSubscription(subscription func(<-chan string), sub, unsub string) {
 	this.client.useNewConnection(func(conn *Connection) {
-		result := NilCommand(conn, this.args(sub))
-		<-result
+		<-NilCommand(conn, this.args(sub))
 
 		defer func() {
-			// we can't get a response, because another gorouting is already listening. 
-			// We'll just use the input, and have the other side get the output
-			conn.input(nilCommand{this.args(unsub), make(chan nothing)})
+			<-NilCommand(conn, this.args(unsub))
 		}()
 
-		output := messageLoop(conn, this.client.fErrCallback)
-		subscription(output)
-
+		subscription(messageLoop(conn, this.client.fErrCallback))
 		return
 	})
 }

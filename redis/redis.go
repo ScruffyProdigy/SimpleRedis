@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"net"
+	"time"
 )
 
 type Config struct {
@@ -35,6 +36,16 @@ func (this errCallbackFunc) Call(e error, s string) {
 	}
 }
 
+func getError(rec interface{}) error {
+	if err, ok := rec.(error); ok {
+		return err
+	}
+	if str, ok := rec.(string); ok {
+		return errors.New(str)
+	}
+	return errors.New("Unknown Error:" /*+fmt.Sprintf(rec)*/)
+}
+
 type Client struct {
 	nextID       int
 	isClosed     bool
@@ -46,21 +57,12 @@ type Client struct {
 
 func New(config Config) (r *Client, e error) {
 	//user has not had a chance to set an error callback at this point
-	//and we don't actually do anything in a separate thread yet
 	//so we should exit gracefully if an error happens during load
 	defer func() {
 		rec := recover()
 		if rec != nil {
-			if err, iserr := rec.(error); iserr {
-				r = nil
-				e = err
-			} else if str, isstr := rec.(string); isstr {
-				r = nil
-				e = errors.New(str)
-			} else {
-				r = nil
-				e = errors.New("Unknown Error")
-			}
+			r = nil
+			e = getError(rec)
 		}
 	}()
 
@@ -93,20 +95,25 @@ func Load(configfile io.Reader) (*Client, error) {
 	return New(config)
 }
 
-func (this *Client) Close() {
+func (this *Client) Close() error {
 	if this.isClosed {
-		return
+		return errors.New("Redis is already closed!")
 	}
 	this.isClosed = true
 
+	timeout := time.After(1 * time.Second)
+	for numClosed := 0; numClosed < this.config.ConnectionCount; numClosed++ {
+		select {
+		case conn := <-this.pool:
+			conn.Close()
+		case <-timeout:
+			this.errCallback(errors.New("Connections are still in use"), "Closing Redis")
+			return errors.New("Could not close all connections")
+		}
+	}
 	close(this.pool)
-	for conn := range this.pool {
-		conn.Close()
-	}
 
-	for conn, _ := range this.used {
-		conn.Close()
-	}
+	return nil
 }
 
 func (this Client) Execute(command command) {

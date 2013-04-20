@@ -20,7 +20,7 @@ const (
 	isInt       = ':'
 	isStatus    = '+'
 	isError     = '-'
-	bufferSize  = 200
+	bufferSize  = 256
 )
 
 var (
@@ -469,7 +469,9 @@ func (this nilCommand) arguments() []string {
 func (this nilCommand) callback() func(*response) error {
 	return func(r *response) error {
 		defer close(this.output)
-		this.output <- nothing{}
+		if r != nil {
+			this.output <- nothing{}
+		}
 		return nil
 	}
 }

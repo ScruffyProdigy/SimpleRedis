@@ -24,6 +24,7 @@ func (this Connection) input(command command) error {
 func (this Connection) output(command command) error {
 	res, err := getResponse(this)
 	if err != nil {
+		command.callback()(nil)
 		return err
 	}
 

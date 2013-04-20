@@ -54,7 +54,6 @@ func TestChannels(t *testing.T) {
 
 	<-start1
 	<-start3
-
 	sender.Publish("Test Test")
 
 	timeout := time.NewTimer(2 * time.Second)
