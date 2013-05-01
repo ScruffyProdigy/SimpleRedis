@@ -54,7 +54,6 @@ type Client struct {
 	nextID       int
 	isClosed     bool
 	pool         chan *Connection     // 	a semaphore of connections to draw from when multiple threads want to connect
-	used         map[*Connection]bool //a set of all connections currently being used
 	config       Config               //	connection details, so we know how to connect to redis
 	fErrCallback errCallbackFunc      //	a callback function - since we operate in a separate goroutine, we can't return an error, instead we call this function sending it the error, and the command we tried to issue
 }
@@ -83,8 +82,6 @@ func New(config Config) (r *Client, e error) {
 
 		this.pool <- conn
 	}
-
-	this.used = make(map[*Connection]bool)
 
 	return this, nil
 }
@@ -151,10 +148,10 @@ func (this *Client) newConnection() (*Connection, error) {
 	c := &Connection{conn, this.nextID, this}
 
 	if this.config.Password != "" {
-		<-NilCommand(c, []string{"AUTH", this.config.Password})
+		<-NilCommand(c, "AUTH", this.config.Password)
 	}
 	if this.config.DBid != 0 {
-		<-NilCommand(c, []string{"SELECT", itoa(this.config.DBid)})
+		<-NilCommand(c, "SELECT", itoa(this.config.DBid))
 	}
 	this.nextID++
 	return c, nil
@@ -166,9 +163,7 @@ func (this *Client) useConnection(callback func(*Connection)) {
 	}
 
 	conn := <-this.pool
-	this.used[conn] = true
 	defer func() {
-		delete(this.used, conn)
 		this.pool <- conn
 	}()
 

@@ -99,10 +99,10 @@ func (this Channel) PatternSubscribe(action func(string)) (startSignal <-chan no
 
 func (this Channel) blockingSubscription(subscription func(<-chan string), sub, unsub string) {
 	this.client.useNewConnection(func(conn *Connection) {
-		<-NilCommand(conn, this.args(sub))
+		<-NilCommand(conn, this.args(sub)...)
 
 		defer func() {
-			<-NilCommand(conn, this.args(unsub))
+			<-NilCommand(conn, this.args(unsub)...)
 		}()
 
 		subscription(messageLoop(conn, this.client.fErrCallback))
@@ -125,7 +125,7 @@ func (this Channel) BlockingPatternSubscription(subscription func(<-chan string)
 //Publish publishes a message on this channel
 //Use Subscribe, PatternSubscribe, BlockingSubscription, or BlockingPatternSubscription to receive the published message
 func (this Channel) Publish(message string) <-chan int {
-	return IntCommand(this, this.args("publish", message))
+	return IntCommand(this, this.args("publish", message)...)
 }
 
 //Use allows you to use this key on a different executor

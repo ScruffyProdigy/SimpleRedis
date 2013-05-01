@@ -117,7 +117,7 @@ func (this *Sorter) Reverse() *Sorter {
 
 //Get will execute the search specified and return the result as a slice of strings
 func (this *Sorter) Get() <-chan []string {
-	return SliceCommand(this.key, this.key.args("sort", this.sortargs()...))
+	return SliceCommand(this.key, this.key.args("sort", this.sortargs()...)...)
 }
 
 //GetInts will execute the search specified and return the result as a slice of integers
@@ -158,7 +158,7 @@ func (this *Sorter) GetFloats() <-chan []float64 {
 //the equivalent of using a Get argument in the sort
 func (this *Sorter) GetFrom(pattern string) <-chan []*string {
 	this.getFrom(pattern)
-	return MaybeSliceCommand(this.key, this.key.args("sort", this.sortargs()...))
+	return MaybeSliceCommand(this.key, this.key.args("sort", this.sortargs()...)...)
 }
 
 //GetFrom will execute the search, but instead of returning the results, will use the results to dig into other string primitives containing (hopefully) integers
@@ -213,14 +213,14 @@ func (this *Sorter) GetFloatsFrom(pattern string) <-chan []*float64 {
 //The Equivalent of using a STORE argument
 func (this *Sorter) StoreStrings(dest List) <-chan int {
 	this.storeIn(dest.key)
-	return IntCommand(this.key, this.key.args("sort", this.sortargs()...))
+	return IntCommand(this.key, this.key.args("sort", this.sortargs()...)...)
 }
 
 //StoreInts will execute the sort, but instead of returning the results will store them in a list primitive
 //The Equivalent of using a STORE argument
 func (this *Sorter) StoreInts(dest IntList) <-chan int {
 	this.storeIn(dest.key)
-	return IntCommand(this.key, this.key.args("sort", this.sortargs()...))
+	return IntCommand(this.key, this.key.args("sort", this.sortargs()...)...)
 }
 
 //GetFromAndStoreIn is like using both GetFrom and StoreStrings

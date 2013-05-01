@@ -24,42 +24,42 @@ func (this Integer) IsValid() <-chan bool {
 
 //Set sets the Integer to "val" - SET command
 func (this Integer) Set(val int) <-chan nothing {
-	return NilCommand(this, this.args("set", itoa(val)))
+	return NilCommand(this, this.args("set", itoa(val))...)
 }
 
 //SetIfEmpty sets the integer to "val", but only if it was empty before - SETNX command
 func (this Integer) SetIfEmpty(val int) <-chan bool {
-	return BoolCommand(this, this.args("setnx", itoa(val)))
+	return BoolCommand(this, this.args("setnx", itoa(val))...)
 }
 
 //Get returns the the value of this integer - GET command
 func (this Integer) Get() <-chan int {
-	return IntCommand(this, this.args("get"))
+	return IntCommand(this, this.args("get")...)
 }
 
 //Gets the value of this integer before setting it to something else - GETSET command
 func (this Integer) GetSet(val int) <-chan int {
-	return IntCommand(this, this.args("getset", itoa(val)))
+	return IntCommand(this, this.args("getset", itoa(val))...)
 }
 
 //Increment increases the value of this integer and returns the new value - INCR command
 func (this Integer) Increment() <-chan int {
-	return IntCommand(this, this.args("incr"))
+	return IntCommand(this, this.args("incr")...)
 }
 
 //IncrementBy increases the value of this integer by "val", and returns the new value - INCRBY command
 func (this Integer) IncrementBy(val int) <-chan int {
-	return IntCommand(this, this.args("incrby", itoa(val)))
+	return IntCommand(this, this.args("incrby", itoa(val))...)
 }
 
 //Decrement decrements this integer and returns the new value - DECR command
 func (this Integer) Decrement() <-chan int {
-	return IntCommand(this, this.args("decr"))
+	return IntCommand(this, this.args("decr")...)
 }
 
 //DecrementBy decreases this integer by "val", and returns the new value - DECRBY command
 func (this Integer) DecrementBy(val int) <-chan int {
-	return IntCommand(this, this.args("decrby", itoa(val)))
+	return IntCommand(this, this.args("decrby", itoa(val))...)
 }
 
 //Use allows you to use this key on a different executor

@@ -27,46 +27,46 @@ func (this SortedIntSet) IsValid() <-chan bool {
 //Add adds an integer to a zset or updates its score if it already exists
 //returns true when adding, false when updating
 func (this SortedIntSet) Add(item int, score float64) <-chan bool {
-	return BoolCommand(this, this.args("zadd", ftoa(score), itoa(item)))
+	return BoolCommand(this, this.args("zadd", ftoa(score), itoa(item))...)
 }
 
 //IncrementBy adjusts the score of the member within the zset
 //returns the new score
 func (this SortedIntSet) IncrementBy(item int, score float64) <-chan float64 {
-	return FloatCommand(this, this.args("zincrby", ftoa(score), itoa(item)))
+	return FloatCommand(this, this.args("zincrby", ftoa(score), itoa(item))...)
 }
 
 //Remove removes a member from the zset if it is part of the set
 //returns whether or not it was part of the set
 func (this SortedIntSet) Remove(item int) <-chan bool {
-	return BoolCommand(this, this.args("zrem", itoa(item)))
+	return BoolCommand(this, this.args("zrem", itoa(item))...)
 }
 
 //Size returns the number of members of the zset
 func (this SortedIntSet) Size() <-chan int {
-	return IntCommand(this, this.args("zcard"))
+	return IntCommand(this, this.args("zcard")...)
 }
 
 //IndexOf returns the index of a member - 
 //ie, the lowest ranked member would have an index of 0, and the next lowest an index of 1
 func (this SortedIntSet) IndexOf(item int) <-chan int {
-	return IntCommand(this, this.args("zrank", itoa(item)))
+	return IntCommand(this, this.args("zrank", itoa(item))...)
 }
 
 //ReverseIndexOf returns the reverse index of a member - 
 //ie, the highest ranked member would have an reverse index of 0, and the next highest an reverse index of 1
 func (this SortedIntSet) ReverseIndexOf(item int) <-chan int {
-	return IntCommand(this, this.args("zrevrank", itoa(item)))
+	return IntCommand(this, this.args("zrevrank", itoa(item))...)
 }
 
 //ScoreOf returns the score associated with a given member of the zset
 func (this SortedIntSet) ScoreOf(item int) <-chan float64 {
-	return FloatCommand(this, this.args("zscore", itoa(item)))
+	return FloatCommand(this, this.args("zscore", itoa(item))...)
 }
 
 //IndexedBetween returns a slice of all members between the indices
 func (this SortedIntSet) IndexedBetween(start, stop int) <-chan []int {
-	output := SliceCommand(this, this.args("zrange", itoa(start), itoa(stop)))
+	output := SliceCommand(this, this.args("zrange", itoa(start), itoa(stop))...)
 	realoutput := make(chan []int, 1)
 	go func() {
 		defer close(realoutput)
@@ -83,7 +83,7 @@ func (this SortedIntSet) IndexedBetween(start, stop int) <-chan []int {
 
 //ReverseIndexedBetween returns a slice of all members between the reverse indices
 func (this SortedIntSet) ReverseIndexedBetween(start, stop int) <-chan []int {
-	output := SliceCommand(this, this.args("zrevrange", itoa(start), itoa(stop)))
+	output := SliceCommand(this, this.args("zrevrange", itoa(start), itoa(stop))...)
 	realoutput := make(chan []int, 1)
 	go func() {
 		defer close(realoutput)
@@ -101,7 +101,7 @@ func (this SortedIntSet) ReverseIndexedBetween(start, stop int) <-chan []int {
 //RemoveIndexedBetween removes all members between the indices
 //returns the number of members removed
 func (this SortedIntSet) RemoveIndexedBetween(start, stop int) <-chan int {
-	return IntCommand(this, this.args("zremrangebyrank", itoa(start), itoa(stop)))
+	return IntCommand(this, this.args("zremrangebyrank", itoa(start), itoa(stop))...)
 }
 
 //SortedIntSetRange keeps track of all range arguments being used in a search
@@ -178,13 +178,13 @@ func (this *SortedIntSetRange) Limit(offset, count int) *SortedIntSetRange {
 
 //Count returns the number of members that fit in the search criteria
 func (this *SortedIntSetRange) Count() <-chan int {
-	return IntCommand(this.key, this.key.args("zcount", this.min, this.max))
+	return IntCommand(this.key, this.key.args("zcount", this.min, this.max)...)
 }
 
 //Remove removes all members that fit the search criteria from the zset
 //returns the number of members removed
 func (this *SortedIntSetRange) Remove() <-chan int {
-	return IntCommand(this.key, this.key.args("zremrangebyscore", this.min, this.max))
+	return IntCommand(this.key, this.key.args("zremrangebyscore", this.min, this.max)...)
 }
 
 //Get returns a list of all members fitting the search criteria
@@ -205,7 +205,7 @@ func (this *SortedIntSetRange) Get() <-chan []int {
 		args = append(args, "LIMIT", itoa(this.offset), itoa(this.count))
 	}
 
-	output := SliceCommand(this.key, this.key.args(op, args...))
+	output := SliceCommand(this.key, this.key.args(op, args...)...)
 	realoutput := make(chan []int, 1)
 	go func() {
 		defer close(realoutput)
@@ -241,7 +241,7 @@ func (this *SortedIntSetRange) GetWithScores() <-chan map[int]float64 {
 		args = append(args, "LIMIT", itoa(this.offset), itoa(this.count))
 	}
 
-	output := MapCommand(this.key, this.key.args(op, args...))
+	output := MapCommand(this.key, this.key.args(op, args...)...)
 	realoutput := make(chan map[int]float64, 1)
 	go func() {
 		defer close(realoutput)
@@ -311,17 +311,17 @@ func (this *SortedIntSetCombo) OfWeightedSet(otherSet SortedIntSet, weight float
 
 //UseLowerScore combines the zsets, and when duplicates are found, will keep the lowest score found
 func (this *SortedIntSetCombo) UseLowerScore() <-chan int {
-	return IntCommand(this.key, this.args("MIN"))
+	return IntCommand(this.key, this.args("MIN")...)
 }
 
 //UseHigherScore combines the zsets, and when duplicates are found, will keep the highest score found
 func (this *SortedIntSetCombo) UseHigherScore() <-chan int {
-	return IntCommand(this.key, this.args("MAX"))
+	return IntCommand(this.key, this.args("MAX")...)
 }
 
 //UseCombinedScores combines the zsets, and when duplicates are found, will add the scores together
 func (this *SortedIntSetCombo) UseCombinedScores() <-chan int {
-	return IntCommand(this.key, this.args("SUM"))
+	return IntCommand(this.key, this.args("SUM")...)
 }
 
 func (this *SortedIntSetCombo) args(mode string) []string {

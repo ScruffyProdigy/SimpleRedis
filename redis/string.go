@@ -24,33 +24,33 @@ func (this String) IsValid() <-chan bool {
 //Set sets the value of the key or updates it if it already exists
 //returns true if setting, false if updating
 func (this String) Set(val string) <-chan nothing {
-	return NilCommand(this, this.args("set", val))
+	return NilCommand(this, this.args("set", val)...)
 }
 
 //SetIfEmpty sets the value of the key, but does nothing if it already exists
 //returns true if setting, false if skipping
 func (this String) SetIfEmpty(val string) <-chan bool {
-	return BoolCommand(this, this.args("setnx", val))
+	return BoolCommand(this, this.args("setnx", val)...)
 }
 
 //Get returns the value of the key
 func (this String) Get() <-chan string {
-	return StringCommand(this, this.args("get"))
+	return StringCommand(this, this.args("get")...)
 }
 
 //Replace sets the value of the key and returns its old value
 func (this String) Replace(val string) <-chan string {
-	return StringCommand(this, this.args("getset", val))
+	return StringCommand(this, this.args("getset", val)...)
 }
 
 //Append appends the value to the end of the key
 func (this String) Append(val string) <-chan int {
-	return IntCommand(this, this.args("append", val))
+	return IntCommand(this, this.args("append", val)...)
 }
 
 //Length returns the number of characters in the value of the key
 func (this String) Length() <-chan int {
-	return IntCommand(this, this.args("strlen"))
+	return IntCommand(this, this.args("strlen")...)
 }
 
 //Use allows you to use this key on a different executor

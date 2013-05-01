@@ -68,13 +68,13 @@ func (this Client) Pipeline(callback func(SafeExecutor)) {
 //(this prevents other clients from issuing commands in between yours)
 func (this Client) Transaction(callback func(SafeExecutor)) {
 	this.piping(func(p SafeExecutor) (result bool) {
-		NilCommand(p, []string{"MULTI"})
+		NilCommand(p, "MULTI")
 		defer func() {
 			rec := recover()
 			if rec == nil {
-				NilCommand(p, []string{"EXEC"})
+				NilCommand(p, "EXEC")
 			} else {
-				NilCommand(p, []string{"DISCARD"})
+				NilCommand(p, "DISCARD")
 				result = false
 			}
 		}()

@@ -43,12 +43,12 @@ func (this Hash) Float(key string) HashFloat {
 
 //Size returns the number of fields that currently exist in the Hash - HLEN command
 func (this Hash) Size() <-chan int {
-	return IntCommand(this, this.args("hlen"))
+	return IntCommand(this, this.args("hlen")...)
 }
 
 //Get returns a map that contains all of the values in the hash - HGETALL command
 func (this Hash) Get() <-chan map[string]string {
-	return MapCommand(this, this.args("hgetall"))
+	return MapCommand(this, this.args("hgetall")...)
 }
 
 //HashField implements basic functions that apply to Hash Fields
@@ -71,12 +71,12 @@ func (this HashField) args(command string, args ...string) []string {
 //Delete removes this field from the Hash if it exists - HDEL command
 //returns whether or not the delete suceeded
 func (this HashField) Delete() <-chan bool {
-	return BoolCommand(this.parent, this.args("hdel"))
+	return BoolCommand(this.parent, this.args("hdel")...)
 }
 
 //Exists returns whether or not this field exists within the hash - HEXISTS command
 func (this HashField) Exists() <-chan bool {
-	return BoolCommand(this.parent, this.args("hexists"))
+	return BoolCommand(this.parent, this.args("hexists")...)
 }
 
 //HashString implements the basic functions on hash fields that are basic strings
@@ -92,18 +92,18 @@ func newHashString(hash Hash, key string) HashString {
 
 //Get returns the string that is in this field - HGET command
 func (this HashString) Get() <-chan string {
-	return StringCommand(this.parent, this.args("hget"))
+	return StringCommand(this.parent, this.args("hget")...)
 }
 
 //Set sets this field to a specific string - HSET command
 func (this HashString) Set(val string) <-chan bool {
-	return BoolCommand(this.parent, this.args("hset", val))
+	return BoolCommand(this.parent, this.args("hset", val)...)
 }
 
 //SetIfEmpty sets this field to a specific string if there isn't anything in it yet - HSETNX command
 //returns whether or not the command succeeded
 func (this HashString) SetIfEmpty(val string) <-chan bool {
-	return BoolCommand(this.parent, this.args("hsetnx", val))
+	return BoolCommand(this.parent, this.args("hsetnx", val)...)
 }
 
 //HashInteger implements the basic functions on hash fields that are basic integers
@@ -119,27 +119,27 @@ func newHashInteger(hash Hash, key string) HashInteger {
 
 //Get returns the integer that is in this field - HGET command
 func (this HashInteger) Get() <-chan int {
-	return IntCommand(this.parent, this.args("hget"))
+	return IntCommand(this.parent, this.args("hget")...)
 }
 
 //Set sets this field to an integer - HSET command
 func (this HashInteger) Set(val int) <-chan bool {
-	return BoolCommand(this.parent, this.args("hset", itoa(val)))
+	return BoolCommand(this.parent, this.args("hset", itoa(val))...)
 }
 
 //SetIfEmpty sets this field to an integer but only if it was empty before - HSETNX command
 func (this HashInteger) SetIfEmpty(val int) <-chan bool {
-	return BoolCommand(this.parent, this.args("hsetnx", itoa(val)))
+	return BoolCommand(this.parent, this.args("hsetnx", itoa(val))...)
 }
 
 //IncremementBy increments the integer in this field by "val" - HINCRBY command
 func (this HashInteger) IncrementBy(val int) <-chan int {
-	return IntCommand(this.parent, this.args("hincrby", itoa(val)))
+	return IntCommand(this.parent, this.args("hincrby", itoa(val))...)
 }
 
 //DecrementBy decreases the integer in this field by "val" - HINCRBY command
 func (this HashInteger) DecrementBy(val int) <-chan int {
-	return IntCommand(this.parent, this.args("hincrby", itoa(-val)))
+	return IntCommand(this.parent, this.args("hincrby", itoa(-val))...)
 }
 
 //HashFloat is an object that implements the Hash functions that apply to float fields
@@ -155,28 +155,28 @@ func newHashFloat(hash Hash, key string) HashFloat {
 
 //Get gets the float in this field - HGET command
 func (this HashFloat) Get() <-chan float64 {
-	return FloatCommand(this.parent, this.args("hget"))
+	return FloatCommand(this.parent, this.args("hget")...)
 }
 
 //Set sets this field to a float - HSET command
 func (this HashFloat) Set(val float64) <-chan bool {
-	return BoolCommand(this.parent, this.args("hset", ftoa(val)))
+	return BoolCommand(this.parent, this.args("hset", ftoa(val))...)
 }
 
 //SetIfEmpty sets this field to a float if nothing is already in it - HSETNX command
 //returns whether or not it succeeded
 func (this HashFloat) SetIfEmpty(val float64) <-chan bool {
-	return BoolCommand(this.parent, this.args("hsetnx", ftoa(val)))
+	return BoolCommand(this.parent, this.args("hsetnx", ftoa(val))...)
 }
 
 //IncrementBy increases the float in this field by "val" - HINCRBYFLOAT command
 func (this HashFloat) IncrementBy(val float64) <-chan float64 {
-	return FloatCommand(this.parent, this.args("hincrbyfloat", ftoa(val)))
+	return FloatCommand(this.parent, this.args("hincrbyfloat", ftoa(val))...)
 }
 
 //DecrementBy decreases the float in this field by "val" - HINCRBYFLOAT command
 func (this HashFloat) DecrementBy(val float64) <-chan float64 {
-	return FloatCommand(this.parent, this.args("hincrbyfloat", ftoa(-val)))
+	return FloatCommand(this.parent, this.args("hincrbyfloat", ftoa(-val))...)
 }
 
 //Use allows you to use this key on a different executor

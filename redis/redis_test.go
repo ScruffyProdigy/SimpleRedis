@@ -27,7 +27,7 @@ func TestBadCommands(t *testing.T) {
 		failed <- true
 	})
 
-	if _, ok := <-NilCommand(r, []string{"INVALIDCOMMAND"}); ok {
+	if _, ok := <-NilCommand(r, "INVALIDCOMMAND"); ok {
 		t.Error("Should not get *ANYTHING* back")
 	}
 	select {
@@ -40,7 +40,7 @@ func TestBadCommands(t *testing.T) {
 
 	var ch, ch2 <-chan nothing
 	r.Pipeline(func(e SafeExecutor) {
-		ch = NilCommand(e, []string{"INVALIDCOMAND"})
+		ch = NilCommand(e, "INVALIDCOMAND")
 		ch2 = s.Use(e).Set("Test Test")
 	})
 	if _, ok := <-ch; ok {
