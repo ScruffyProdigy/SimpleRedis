@@ -59,39 +59,61 @@ func (this Set) Pop() <-chan string {
 	return StringCommand(this, this.args("spop")...)
 }
 
-//TODO: allow variable parameters so that multiple sets can be intersected, unioned, or diffed
-
 //Intersection returns all of the strings that are in both this set and another - SINTER command
-func (this Set) Intersection(otherSet Set) <-chan []string {
-	return SliceCommand(this, this.args("sinter", otherSet.key)...)
+func (this Set) Intersection(otherSets ...Set) <-chan []string {
+	args := this.args("sinter")
+	for _, set := range otherSets {
+		args = append(args, set.key)
+	}
+	return SliceCommand(this, args...)
 }
 
 //Union returns all of the strings that are either in this set or another - SUNION command
-func (this Set) Union(otherSet Set) <-chan []string {
-	return SliceCommand(this, this.args("sunion", otherSet.key)...)
+func (this Set) Union(otherSets ...Set) <-chan []string {
+	args := this.args("sunion")
+	for _, set := range otherSets {
+		args = append(args, set.key)
+	}
+	return SliceCommand(this, args...)
 }
 
 //Difference returns all of the strings that are in this set, but not another - SDIFF command
-func (this Set) Difference(otherSet Set) <-chan []string {
-	return SliceCommand(this, this.args("sdiff", otherSet.key)...)
+func (this Set) Difference(otherSets ...Set) <-chan []string {
+	args := this.args("sdiff")
+	for _, set := range otherSets {
+		args = append(args, set.key)
+	}
+	return SliceCommand(this, args...)
 }
 
 //StoreIntersectionOf finds the intersection of two other sets and stores it in this set - SINTERSTORE command
 //returns the size of the resulting set
-func (this Set) StoreIntersectionOf(setA Set, setB Set) <-chan int {
-	return IntCommand(this, this.args("sinterstore", setA.key, setB.key)...)
+func (this Set) StoreIntersectionOf(sets ...Set) <-chan int {
+	args := this.args("sinterstore")
+	for _, set := range sets {
+		args = append(args, set.key)
+	}
+	return IntCommand(this, args...)
 }
 
 //StoreUnionOf finds the union of two other sets and stores it in this set - SUNIONSTORE command
 //returns the size of the resulting set
-func (this Set) StoreUnionOf(setA Set, setB Set) <-chan int {
-	return IntCommand(this, this.args("sunionstore", setA.key, setB.key)...)
+func (this Set) StoreUnionOf(sets ...Set) <-chan int {
+	args := this.args("sunionstore")
+	for _, set := range sets {
+		args = append(args, set.key)
+	}
+	return IntCommand(this, args...)
 }
 
 //StoreDifferenceOf finds the difference of two other sets and stores it in this set - SDIFFSTORE command
 //returns the size of the resulting set
-func (this Set) StoreDifferenceOf(setA Set, setB Set) <-chan int {
-	return IntCommand(this, this.args("sdiffstore", setA.key, setB.key)...)
+func (this Set) StoreDifferenceOf(sets ...Set) <-chan int {
+	args := this.args("sdiffstore")
+	for _, set := range sets {
+		args = append(args, set.key)
+	}
+	return IntCommand(this, args...)
 }
 
 //MoveMemberTo removes a string from this set and adds it to another - SMOVE command

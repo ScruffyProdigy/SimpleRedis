@@ -122,36 +122,12 @@ func (this *Sorter) Get() <-chan []string {
 
 //GetInts will execute the search specified and return the result as a slice of integers
 func (this *Sorter) GetInts() <-chan []int {
-	output := this.Get()
-	realoutput := make(chan []int, 1)
-	go func() {
-		defer close(realoutput)
-		if strings, ok := <-output; ok {
-			ints, err := stringsToInts(strings)
-			if err != nil {
-				this.key.client.errCallback(err, "sorting ints")
-			}
-			realoutput <- ints
-		}
-	}()
-	return realoutput
+	return intsChannel(this.Get())
 }
 
 //GetFloats will execute the search specified and return the result as a slice of Floats
 func (this *Sorter) GetFloats() <-chan []float64 {
-	output := this.Get()
-	realoutput := make(chan []float64, 1)
-	go func() {
-		defer close(realoutput)
-		if strings, ok := <-output; ok {
-			floats, err := stringsToFloats(strings)
-			if err != nil {
-				this.key.client.errCallback(err, "sorting floats")
-			}
-			realoutput <- floats
-		}
-	}()
-	return realoutput
+	return floatsChannel(this.Get())
 }
 
 //GetFrom will execute the search, but instead of returning the results, will use the results to dig into other string primitives
@@ -164,49 +140,14 @@ func (this *Sorter) GetFrom(pattern string) <-chan []*string {
 //GetFrom will execute the search, but instead of returning the results, will use the results to dig into other string primitives containing (hopefully) integers
 //the equivalent of using a Get argument in the sort
 func (this *Sorter) GetIntsFrom(pattern string) <-chan []*int {
-	output := this.GetFrom(pattern)
-	realoutput := make(chan []*int, 1)
-	go func() {
-		defer close(realoutput)
-		if strings, ok := <-output; ok {
-			ints := make([]*int, len(strings))
-			for i, str := range strings {
-				if str != nil {
-					j, err := atoi(*str)
-					if err != nil {
-						this.key.client.errCallback(err, "sorting ints")
-					}
-					ints[i] = &j
-				}
-			}
-			realoutput <- ints
-		}
-	}()
-	return realoutput
+	return maybeIntsChannel(this.GetFrom(pattern))
+
 }
 
 //GetFrom will execute the search, but instead of returning the results, will use the results to dig into other string primitives containing (hopefully) floating point numbers
 //the equivalent of using a GET argument in the sort
 func (this *Sorter) GetFloatsFrom(pattern string) <-chan []*float64 {
-	output := this.GetFrom(pattern)
-	realoutput := make(chan []*float64, 1)
-	go func() {
-		defer close(realoutput)
-		if strings, ok := <-output; ok {
-			floats := make([]*float64, len(strings))
-			for i, str := range strings {
-				if str != nil {
-					j, err := atof(*str)
-					if err != nil {
-						this.key.client.errCallback(err, "sorting floats")
-					}
-					floats[i] = &j
-				}
-			}
-			realoutput <- floats
-		}
-	}()
-	return realoutput
+	return maybeFloatsChannel(this.GetFrom(pattern))
 }
 
 //StoreStrings will execute the sort, but instead of returning the results will store them in a list primitive

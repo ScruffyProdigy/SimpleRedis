@@ -176,7 +176,7 @@ func TestSortedSets(t *testing.T) {
 	//make sure Above/Below override AboveOrEqualTo/BelowOrEqualTo properly
 	go func() {
 		res := <-ss.Scores().AboveOrEqualTo(3).Above(3).Limit(0, 3).Get()
-		if res[0] != "C" || res[1] != "J" || res[2] != "D" {
+		if len(res) != 3 || res[0] != "C" || res[1] != "J" || res[2] != "D" {
 			t.Error("First 3 Above 3 should be [C J D], not", res)
 		}
 		done <- true
@@ -192,7 +192,7 @@ func TestSortedSets(t *testing.T) {
 
 	go func() {
 		res := <-ss.Scores().BelowOrEqualTo(8).Below(8).Reversed().Limit(0, 3).Get()
-		if res[0] != "I" || res[1] != "D" || res[2] != "J" {
+		if len(res) != 3 || res[0] != "I" || res[1] != "D" || res[2] != "J" {
 			t.Error("First 3 below 8 should be [I D J], not", res)
 		}
 		done <- true
@@ -208,7 +208,7 @@ func TestSortedSets(t *testing.T) {
 
 	go func() {
 		res := <-ss.Scores().AboveOrEqualTo(5).Above(3).Limit(0, 3).Get()
-		if res[0] != "J" || res[1] != "D" || res[2] != "I" {
+		if len(res) != 3 || res[0] != "J" || res[1] != "D" || res[2] != "I" {
 			t.Error("First 3 Above or Equal to 5 should be [J D I], not", res)
 		}
 		done <- true
@@ -216,7 +216,7 @@ func TestSortedSets(t *testing.T) {
 
 	go func() {
 		res := <-ss.Scores().Above(3).AboveOrEqualTo(5).Limit(0, 3).Get()
-		if res[0] != "J" || res[1] != "D" || res[2] != "I" {
+		if len(res) != 3 || res[0] != "J" || res[1] != "D" || res[2] != "I" {
 			t.Error("First 3 Above or Equal to 5 should be [J D I], not", res)
 		}
 		done <- true
@@ -224,7 +224,7 @@ func TestSortedSets(t *testing.T) {
 
 	go func() {
 		res := <-ss.Scores().BelowOrEqualTo(6).Below(8).Reversed().Limit(0, 3).Get()
-		if res[0] != "D" || res[1] != "J" || res[2] != "C" {
+		if len(res) != 3 || res[0] != "D" || res[1] != "J" || res[2] != "C" {
 			t.Error("First 3 below or equal to 6 should be [D J C], not", res)
 		}
 		done <- true
@@ -232,7 +232,7 @@ func TestSortedSets(t *testing.T) {
 
 	go func() {
 		res := <-ss.Scores().Below(8).BelowOrEqualTo(6).Reversed().Limit(0, 3).Get()
-		if res[0] != "D" || res[1] != "J" || res[2] != "C" {
+		if len(res) != 3 || res[0] != "D" || res[1] != "J" || res[2] != "C" {
 			t.Error("First 3 Below or equal to 6 should be [D J C], not", res)
 		}
 		done <- true

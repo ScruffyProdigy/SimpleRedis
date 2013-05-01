@@ -36,19 +36,7 @@ func (this IntSet) Remove(item int) <-chan bool {
 
 //Members lists all of the integers in the set - SMEMBERS command
 func (this IntSet) Members() <-chan []int {
-	output := SliceCommand(this, this.args("smembers")...)
-	realoutput := make(chan []int, 1)
-	go func() {
-		defer close(realoutput)
-		if slice, ok := <-output; ok {
-			ints, err := stringsToInts(slice)
-			if err != nil {
-				this.client.errCallback(err, "smembers")
-			}
-			realoutput <- ints
-		}
-	}()
-	return realoutput
+	return intsChannel(SliceCommand(this, this.args("smembers")...))
 }
 
 //IsMember returns whether or not an integer is part of the set - SISMEMBER command
@@ -72,72 +60,60 @@ func (this IntSet) Pop() <-chan int {
 }
 
 //Intersection returns a list of all integers that this and another set have in common - SINTER command
-func (this IntSet) Intersection(otherSet IntSet) <-chan []int {
-	output := SliceCommand(this, this.args("sinter", otherSet.key)...)
-	realoutput := make(chan []int, 1)
-	go func() {
-		defer close(realoutput)
-		if slice, ok := <-output; ok {
-			ints, err := stringsToInts(slice)
-			if err != nil {
-				this.client.errCallback(err, "sinter")
-			}
-			realoutput <- ints
-		}
-	}()
-	return realoutput
+func (this IntSet) Intersection(otherSets ...IntSet) <-chan []int {
+	args := this.args("sinter")
+	for _, set := range otherSets {
+		args = append(args, set.key)
+	}
+	return intsChannel(SliceCommand(this, args...))
 }
 
 //Union returns a list of all integers that are either in this set or another - SUNION command
-func (this IntSet) Union(otherSet IntSet) <-chan []int {
-	output := SliceCommand(this, this.args("sunion", otherSet.key)...)
-	realoutput := make(chan []int, 1)
-	go func() {
-		defer close(realoutput)
-		if slice, ok := <-output; ok {
-			ints, err := stringsToInts(slice)
-			if err != nil {
-				this.client.errCallback(err, "sunion")
-			}
-			realoutput <- ints
-		}
-	}()
-	return realoutput
+func (this IntSet) Union(otherSets ...IntSet) <-chan []int {
+	args := this.args("sunion")
+	for _, set := range otherSets {
+		args = append(args, set.key)
+	}
+	return intsChannel(SliceCommand(this, args...))
 }
 
 //Difference returns a list of all integers that are in this set, but not another - SDIFF command
-func (this IntSet) Difference(otherSet IntSet) <-chan []int {
-	output := SliceCommand(this, this.args("sdiff", otherSet.key)...)
-	realoutput := make(chan []int, 1)
-	go func() {
-		defer close(realoutput)
-		if slice, ok := <-output; ok {
-			ints, err := stringsToInts(slice)
-			if err != nil {
-				this.client.errCallback(err, "sdiff")
-			}
-			realoutput <- ints
-		}
-	}()
-	return realoutput
+func (this IntSet) Difference(otherSets ...IntSet) <-chan []int {
+	args := this.args("sdiff")
+	for _, set := range otherSets {
+		args = append(args, set.key)
+	}
+	return intsChannel(SliceCommand(this, args...))
 }
 
-//StoreIntersectionOf finds the intersection of two other sets and stores it in this one - SINTERSTORE
+//StoreIntersectionOf finds the intersection of multiple other sets and stores it in this one - SINTERSTORE
 //it returns the number of elements in the new set
-func (this IntSet) StoreIntersectionOf(setA IntSet, setB IntSet) <-chan int {
-	return IntCommand(this, this.args("sinterstore", setA.key, setB.key)...)
+func (this IntSet) StoreIntersectionOf(sets ...IntSet) <-chan int {
+	args := this.args("sinterstore")
+	for _, set := range sets {
+		args = append(args, set.key)
+	}
+	return IntCommand(this, args...)
 }
 
-//StoreUnionOf finds the union of two other sets and stores it in this one - SUNIONSTORE
+//StoreUnionOf finds the union of multiple other sets and stores it in this one - SUNIONSTORE
 //it returns the number of elements in the new set
-func (this IntSet) StoreUnionOf(setA IntSet, setB IntSet) <-chan int {
-	return IntCommand(this, this.args("sunionstore", setA.key, setB.key)...)
+func (this IntSet) StoreUnionOf(sets ...IntSet) <-chan int {
+	args := this.args("sunionstore")
+	for _, set := range sets {
+		args = append(args, set.key)
+	}
+	return IntCommand(this, args...)
 }
 
 //StoreDifferenceOf finds the difference between two other sets and stores it in this one - SDIFFSTORE
 //it returns the number of elements in the new set
-func (this IntSet) StoreDifferenceOf(setA IntSet, setB IntSet) <-chan int {
-	return IntCommand(this, this.args("sdiffstore", setA.key, setB.key)...)
+func (this IntSet) StoreDifferenceOf(sets ...IntSet) <-chan int {
+	args := this.args("sdiffstore")
+	for _, set := range sets {
+		args = append(args, set.key)
+	}
+	return IntCommand(this, args...)
 }
 
 //MoveMemberTo removes an integer from this set if it exists, and then adds it to another set - SMOVE

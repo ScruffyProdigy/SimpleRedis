@@ -53,9 +53,9 @@ func getError(rec interface{}) error {
 type Client struct {
 	nextID       int
 	isClosed     bool
-	pool         chan *Connection     // 	a semaphore of connections to draw from when multiple threads want to connect
-	config       Config               //	connection details, so we know how to connect to redis
-	fErrCallback errCallbackFunc      //	a callback function - since we operate in a separate goroutine, we can't return an error, instead we call this function sending it the error, and the command we tried to issue
+	pool         chan *Connection // 	a semaphore of connections to draw from when multiple threads want to connect
+	config       Config           //	connection details, so we know how to connect to redis
+	fErrCallback errCallbackFunc  //	a callback function - since we operate in a separate goroutine, we can't return an error, instead we call this function sending it the error, and the command we tried to issue
 }
 
 //New gives back a Client that communicates using the details specified in the supplied Config

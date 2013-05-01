@@ -66,36 +66,12 @@ func (this SortedIntSet) ScoreOf(item int) <-chan float64 {
 
 //IndexedBetween returns a slice of all members between the indices
 func (this SortedIntSet) IndexedBetween(start, stop int) <-chan []int {
-	output := SliceCommand(this, this.args("zrange", itoa(start), itoa(stop))...)
-	realoutput := make(chan []int, 1)
-	go func() {
-		defer close(realoutput)
-		if strings, ok := <-output; ok {
-			if ints, err := stringsToInts(strings); err != nil {
-				this.client.errCallback(err, "zrange")
-			} else {
-				realoutput <- ints
-			}
-		}
-	}()
-	return realoutput
+	return intsChannel(SliceCommand(this, this.args("zrange", itoa(start), itoa(stop))...))
 }
 
 //ReverseIndexedBetween returns a slice of all members between the reverse indices
 func (this SortedIntSet) ReverseIndexedBetween(start, stop int) <-chan []int {
-	output := SliceCommand(this, this.args("zrevrange", itoa(start), itoa(stop))...)
-	realoutput := make(chan []int, 1)
-	go func() {
-		defer close(realoutput)
-		if strings, ok := <-output; ok {
-			if ints, err := stringsToInts(strings); err != nil {
-				this.client.errCallback(err, "zrevrange")
-			} else {
-				realoutput <- ints
-			}
-		}
-	}()
-	return realoutput
+	return intsChannel(SliceCommand(this, this.args("zrevrange", itoa(start), itoa(stop))...))
 }
 
 //RemoveIndexedBetween removes all members between the indices
@@ -205,20 +181,7 @@ func (this *SortedIntSetRange) Get() <-chan []int {
 		args = append(args, "LIMIT", itoa(this.offset), itoa(this.count))
 	}
 
-	output := SliceCommand(this.key, this.key.args(op, args...)...)
-	realoutput := make(chan []int, 1)
-	go func() {
-		defer close(realoutput)
-		if strings, ok := <-output; ok {
-			if ints, err := stringsToInts(strings); err != nil {
-				this.key.client.errCallback(err, "sorting ints")
-			} else {
-				realoutput <- ints
-			}
-		}
-	}()
-
-	return realoutput
+	return intsChannel(SliceCommand(this.key, this.key.args(op, args...)...))
 }
 
 //GetWithScores returns a map with all members fitting the search criteria and their associated scores
@@ -241,28 +204,7 @@ func (this *SortedIntSetRange) GetWithScores() <-chan map[int]float64 {
 		args = append(args, "LIMIT", itoa(this.offset), itoa(this.count))
 	}
 
-	output := MapCommand(this.key, this.key.args(op, args...)...)
-	realoutput := make(chan map[int]float64, 1)
-	go func() {
-		defer close(realoutput)
-		if midway, ok := <-output; ok {
-			result := make(map[int]float64, len(midway))
-			for k, v := range midway {
-				index, err := atoi(k)
-				if err != nil {
-					this.key.client.errCallback(err, "sorting with scores (key)")
-				}
-
-				result[index], err = atof(v)
-				if err != nil {
-					this.key.client.errCallback(err, "sorting with scores (value)")
-				}
-			}
-			realoutput <- result
-		}
-	}()
-
-	return realoutput
+	return intfloatMapChannel(MapCommand(this.key, this.key.args(op, args...)...))
 }
 
 //SortedIntSetCombo keeps track of how you want to be combining multiple zsets

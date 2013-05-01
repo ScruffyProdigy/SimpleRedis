@@ -202,23 +202,7 @@ func (this *SortedSetRange) GetWithScores() <-chan map[string]float64 {
 		args = append(args, "LIMIT", itoa(this.offset), itoa(this.count))
 	}
 
-	output := MapCommand(this.key, this.key.args(op, args...)...)
-	realoutput := make(chan map[string]float64, 1)
-	go func() {
-		defer close(realoutput)
-		if strings, ok := <-output; ok {
-			result := make(map[string]float64, len(strings))
-			for k, v := range strings {
-				var err error
-				result[k], err = atof(v)
-				if err != nil {
-					this.key.client.errCallback(err, "sorting with scores")
-				}
-			}
-			realoutput <- result
-		}
-	}()
-	return realoutput
+	return stringfloatMapChannel(MapCommand(this.key, this.key.args(op, args...)...))
 }
 
 //SortedSetCombo keeps track of how you want to be combining multiple zsets

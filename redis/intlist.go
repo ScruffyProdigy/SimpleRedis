@@ -64,20 +64,7 @@ func (this IntList) BlockUntilLeftPop() <-chan int {
 //BlockUntilLeftPopWithTimeout pops the leftmost integer off of the list and returns it - BLPOP command
 //If there is nothing in the list, it will wait up to "timeout" seconds for something to be placed in the list
 func (this IntList) BlockUntilLeftPopWithTimeout(timeout int) <-chan int {
-	output := SliceCommand(this, this.args("blpop", itoa(timeout))...)
-	realoutput := make(chan int, 1)
-	go func() {
-		defer close(realoutput)
-		if slice, ok := <-output; ok {
-			if res, err := atoi(slice[1]); err != nil {
-				this.client.errCallback(err, "blpop")
-				return
-			} else {
-				realoutput <- res
-			}
-		}
-	}()
-	return realoutput
+	return intChannel(SliceCommand(this, this.args("blpop", itoa(timeout))...), 1)
 }
 
 //RightPop pops the rightmost integer off of the list and returns it - RPOP command
@@ -95,19 +82,7 @@ func (this IntList) BlockUntilRightPop() <-chan int {
 //BlockUntilRightPopWithTimeout pops the rightmost integer off of the list and returns it - BRPOP command
 //If there is nothing in the list, it will wait up to "timeout" seconds for something to be placed in it
 func (this IntList) BlockUntilRightPopWithTimeout(timeout int) <-chan int {
-	output := SliceCommand(this, this.args("brpop", itoa(timeout))...)
-	realoutput := make(chan int, 1)
-	go func() {
-		defer close(realoutput)
-		if slice, ok := <-output; ok {
-			if res, err := atoi(slice[1]); err != nil {
-				this.client.errCallback(err, "brpop")
-			} else {
-				realoutput <- res
-			}
-		}
-	}()
-	return realoutput
+	return intChannel(SliceCommand(this, this.args("brpop", itoa(timeout))...), 1)
 }
 
 //Index returns the integer waiting at the specified index	- LINDEX command
@@ -153,19 +128,7 @@ func (this IntList) InsertAfter(pivot, item int) <-chan int {
 //negative indexes index from the right with -1 being the rightmost
 //non-negative indexes index from the left with 0 being the leftmost
 func (this IntList) GetFromRange(left, right int) <-chan []int {
-	output := SliceCommand(this, this.args("lrange", itoa(left), itoa(right))...)
-	realoutput := make(chan []int, 1)
-	go func() {
-		defer close(realoutput)
-		if slice, ok := <-output; ok {
-			if ints, err := stringsToInts(slice); err != nil {
-				this.client.errCallback(err, "lrange")
-			} else {
-				realoutput <- ints
-			}
-		}
-	}()
-	return realoutput
+	return intsChannel(SliceCommand(this, this.args("lrange", itoa(left), itoa(right))...))
 }
 
 //TrimToRange removes all items not within the two indices - LTRIM command

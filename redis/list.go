@@ -49,15 +49,7 @@ func (this List) BlockUntilLeftPop() <-chan string {
 }
 
 func (this List) BlockUntilLeftPopWithTimeout(timeout int) <-chan string {
-	output := SliceCommand(this, this.args("blpop", itoa(timeout))...)
-	realoutput := make(chan string, 1)
-	go func() {
-		defer close(realoutput)
-		if slice, ok := <-output; ok {
-			realoutput <- slice[1]
-		}
-	}()
-	return realoutput
+	return stringChannel(SliceCommand(this, this.args("blpop", itoa(timeout))...), 1)
 }
 
 func (this List) RightPop() <-chan string {
@@ -69,15 +61,7 @@ func (this List) BlockUntilRightPop() <-chan string {
 }
 
 func (this List) BlockUntilRightPopWithTimeout(timeout int) <-chan string {
-	output := SliceCommand(this, this.args("brpop", itoa(timeout))...)
-	realoutput := make(chan string, 1)
-	go func() {
-		defer close(realoutput)
-		if slice, ok := <-output; ok {
-			realoutput <- slice[1]
-		}
-	}()
-	return realoutput
+	return stringChannel(SliceCommand(this, this.args("brpop", itoa(timeout))...), 1)
 }
 
 func (this List) Index(index int) <-chan string {
