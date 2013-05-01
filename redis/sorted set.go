@@ -10,6 +10,7 @@ func newSortedSet(client SafeExecutor, key string) SortedSet {
 	}
 }
 
+//IsValid returns whether the underlying redis object can use the commands in this object
 func (this SortedSet) IsValid() <-chan bool {
 	c := make(chan bool, 1)
 	func() {
@@ -19,37 +20,65 @@ func (this SortedSet) IsValid() <-chan bool {
 	return c
 }
 
+//Add adds a member to a zset or updates its score if it already exists
+//returns true when adding, false when updating
 func (this SortedSet) Add(item string, score float64) <-chan bool {
 	return BoolCommand(this, this.args("zadd", ftoa(score), item))
 }
+
+//IncrementBy adjusts the score of the member within the zset
+//returns the new score
 func (this SortedSet) IncrementBy(item string, score float64) <-chan float64 {
 	return FloatCommand(this, this.args("zincrby", ftoa(score), item))
 }
+
+//Remove removes a member from the zset if it is part of the set
+//returns whether or not it was part of the set
 func (this SortedSet) Remove(item string) <-chan bool {
 	return BoolCommand(this, this.args("zrem", item))
 }
+
+//Size returns the number of members of the zset
 func (this SortedSet) Size() <-chan int {
 	return IntCommand(this, this.args("zcard"))
 }
+
+//IndexOf returns the index of a member - 
+//ie, the lowest ranked member would have an index of 0, and the next lowest an index of 1
 func (this SortedSet) IndexOf(item string) <-chan int {
 	return IntCommand(this, this.args("zrank", item))
 }
+
+//ReverseIndexOf returns the reverse index of a member - 
+//ie, the highest ranked member would have an reverse index of 0, and the next highest an reverse index of 1
 func (this SortedSet) ReverseIndexOf(item string) <-chan int {
 	return IntCommand(this, this.args("zrevrank", item))
 }
+
+//ScoreOf returns the score associated with a given member of the zset
 func (this SortedSet) ScoreOf(item string) <-chan float64 {
 	return FloatCommand(this, this.args("zscore", item))
 }
+
+//IndexedBetween returns a slice of all members between the indices
 func (this SortedSet) IndexedBetween(start, stop int) <-chan []string {
 	return SliceCommand(this, this.args("zrange", itoa(start), itoa(stop)))
 }
+
+//ReverseIndexedBetween returns a slice of all members between the reverse indices
 func (this SortedSet) ReverseIndexedBetween(start, stop int) <-chan []string {
 	return SliceCommand(this, this.args("zrevrange", itoa(start), itoa(stop)))
 }
+
+//TODO:IndexBetweenWithScores,ReverseIndexedBetween
+
+//RemoveIndexedBetween removes all members between the indices
+//returns the number of members removed
 func (this SortedSet) RemoveIndexedBetween(start, stop int) <-chan int {
 	return IntCommand(this, this.args("zremrangebyrank", itoa(start), itoa(stop)))
 }
 
+//SortedSetRange keeps track of all range arguments being used in a search
 type SortedSetRange struct {
 	min, max      string
 	fmin, fmax    float64
@@ -60,6 +89,7 @@ type SortedSetRange struct {
 	key Key
 }
 
+//Scores createa a SortedSetRange to help narrow a search to be done later
 func (this SortedSet) Scores() *SortedSetRange {
 	return &SortedSetRange{
 		min: "-inf",
@@ -68,6 +98,7 @@ func (this SortedSet) Scores() *SortedSetRange {
 	}
 }
 
+//Above limits results to members who have a score above "min"
 func (this *SortedSetRange) Above(min float64) *SortedSetRange {
 	if this.min == "-inf" || this.fmin <= min {
 		this.fmin = min
@@ -76,6 +107,7 @@ func (this *SortedSetRange) Above(min float64) *SortedSetRange {
 	return this
 }
 
+//Below limits results to members who have a score below "max"
 func (this *SortedSetRange) Below(max float64) *SortedSetRange {
 	if this.max == "+inf" || this.fmax >= max {
 		this.fmax = max
@@ -84,6 +116,7 @@ func (this *SortedSetRange) Below(max float64) *SortedSetRange {
 	return this
 }
 
+//AboveOrEqualTo limits results to members who have a score above or equal to "min"
 func (this *SortedSetRange) AboveOrEqualTo(min float64) *SortedSetRange {
 	if this.min == "-inf" || this.fmin < min {
 		this.fmin = min
@@ -92,6 +125,7 @@ func (this *SortedSetRange) AboveOrEqualTo(min float64) *SortedSetRange {
 	return this
 }
 
+//BelowOrEqualTo limits results to members who have a score below or equal to "max"
 func (this *SortedSetRange) BelowOrEqualTo(max float64) *SortedSetRange {
 	if this.max == "+inf" || this.fmax > max {
 		this.fmax = max
@@ -100,12 +134,14 @@ func (this *SortedSetRange) BelowOrEqualTo(max float64) *SortedSetRange {
 	return this
 }
 
+//Reversed returns the results in reverse order
 //only useful if getting or getting with scores; not useful for counting or removing
 func (this *SortedSetRange) Reversed() *SortedSetRange {
 	this.reversed = !this.reversed
 	return this
 }
 
+//Limit limits the results you get back - it skips the first "offset" results, and then only returns the next "offset"
 //only useful if getting or getting with scores; not useful for counting or removing
 func (this *SortedSetRange) Limit(offset, count int) *SortedSetRange {
 	this.limited = true
@@ -114,14 +150,18 @@ func (this *SortedSetRange) Limit(offset, count int) *SortedSetRange {
 	return this
 }
 
+//Count returns the number of members that fit in the search criteria
 func (this *SortedSetRange) Count() <-chan int {
 	return IntCommand(this.key, this.key.args("zcount", this.min, this.max))
 }
 
+//Remove removes all members that fit the search criteria from the zset
+//returns the number of members removed
 func (this *SortedSetRange) Remove() <-chan int {
 	return IntCommand(this.key, this.key.args("zremrangebyscore", this.min, this.max))
 }
 
+//Get returns a list of all members fitting the search criteria
 func (this *SortedSetRange) Get() <-chan []string {
 	op := "zrangebyscore"
 	args := make([]string, 2, 5)
@@ -142,6 +182,7 @@ func (this *SortedSetRange) Get() <-chan []string {
 	return SliceCommand(this.key, this.key.args(op, args...))
 }
 
+//GetWithScores returns a map with all members fitting the search criteria and their associated scores
 func (this *SortedSetRange) GetWithScores() <-chan map[string]float64 {
 	op := "zrangebyscore"
 	args := make([]string, 3, 6)
@@ -180,6 +221,7 @@ func (this *SortedSetRange) GetWithScores() <-chan map[string]float64 {
 	return realoutput
 }
 
+//SortedSetCombo keeps track of how you want to be combining multiple zsets
 type SortedSetCombo struct {
 	weighted bool
 	op       string //either Union or Intersection
@@ -188,6 +230,7 @@ type SortedSetCombo struct {
 	key Key
 }
 
+//StoreUnion sets up a combo that will be a union of other zsets
 func (this SortedSet) StoreUnion() *SortedSetCombo {
 	return &SortedSetCombo{
 		op:  "zunionstore",
@@ -195,6 +238,7 @@ func (this SortedSet) StoreUnion() *SortedSetCombo {
 	}
 }
 
+//StoreIntersection sets up a combo that will be an intersection of other zsets
 func (this SortedSet) StoreIntersection() *SortedSetCombo {
 	return &SortedSetCombo{
 		op:  "zinterstore",
@@ -202,6 +246,7 @@ func (this SortedSet) StoreIntersection() *SortedSetCombo {
 	}
 }
 
+//OfSet adds a zset to the combo
 func (this *SortedSetCombo) OfSet(otherSet SortedSet) *SortedSetCombo {
 	if this.sets == nil {
 		this.sets = make(map[string]float64)
@@ -210,6 +255,7 @@ func (this *SortedSetCombo) OfSet(otherSet SortedSet) *SortedSetCombo {
 	return this
 }
 
+//OfWeightedSet adds a zset to the combo, and weights it to be either heavier or lighter than other zsets
 func (this *SortedSetCombo) OfWeightedSet(otherSet SortedSet, weight float64) *SortedSetCombo {
 	if this.sets == nil {
 		this.sets = make(map[string]float64)
@@ -219,14 +265,17 @@ func (this *SortedSetCombo) OfWeightedSet(otherSet SortedSet, weight float64) *S
 	return this
 }
 
+//UseLowerScore combines the zsets, and when duplicates are found, will keep the lowest score found
 func (this *SortedSetCombo) UseLowerScore() <-chan int {
 	return IntCommand(this.key, this.args("MIN"))
 }
 
+//UseHigherScore combines the zsets, and when duplicates are found, will keep the highest score found
 func (this *SortedSetCombo) UseHigherScore() <-chan int {
 	return IntCommand(this.key, this.args("MAX"))
 }
 
+//UseCombinedScores combines the zsets, and when duplicates are found, will add the scores together
 func (this *SortedSetCombo) UseCombinedScores() <-chan int {
 	return IntCommand(this.key, this.args("SUM"))
 }
@@ -254,6 +303,7 @@ func (this *SortedSetCombo) args(mode string) []string {
 	return this.key.args(this.op, result...)
 }
 
+//Use allows you to use this key on a different executor
 func (this SortedSet) Use(e SafeExecutor) SortedSet {
 	this.client = e
 	return this

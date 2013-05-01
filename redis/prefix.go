@@ -1,25 +1,55 @@
 package redis
 
 type Prefix interface {
+	//Key creates a basic key; you probably won't use this directly very often
 	Key(key string) Key
+
+	//String creates the definition for a basic Redis String primitive
 	String(key string) String
+
+	//Integer creates the definition for a Redis String primitive that contains an integer
 	Integer(key string) Integer
+
+	//Float creates the definition for a Redis String primitive that contains a floating point number
 	Float(key string) Float
+
+	//Bits creates the definition for a Redis String primitive that contains a bitfield
 	Bits(key string) Bits
+
+	//Hash creates the definition for a basic Redis Hash primitive
 	Hash(key string) Hash
+
+	//List creates the definition for a basic Redis List primitive
 	List(key string) List
+
+	//IntList creates the definition for a Redis List primitive that contains only integers
 	IntList(key string) IntList
-	FloatList(key string) FloatList
+
+	//Set creates the definition for a basic Redis Set primitive
 	Set(key string) Set
+
+	//IntSet creates the definition for a Redis Set primitive that contains only integers
 	IntSet(key string) IntSet
-	FloatSet(key string) FloatSet
+
+	//SortedSet creates the definition for a basic Redis ZSet primitive
 	SortedSet(key string) SortedSet
+
+	//SortedIntSet creates the definition for a Redis ZSet primitive that contains only integers
 	SortedIntSet(key string) SortedIntSet
-	SortedFloatSet(key string) SortedFloatSet
+
+	//Mutex creates a Mutex within redis
 	Mutex(key string) Mutex
+
+	//Semaphore creates a Semaphore within redis
 	Semaphore(key string, count int) Mutex
+
+	//ReadWriteMutex creates a Read/Write Mutex within redis
 	ReadWriteMutex(key string, readers int) *ReadWriteMutex
+
+	//Channel defines a pub/sub channel within redis
 	Channel(key string) Channel
+
+	//Prefix allows you to create a namespace for other redis primitives to help make sure there are no duplication conflicts
 	Prefix(key string) Prefix
 }
 
@@ -60,10 +90,6 @@ func (this *prefix) IntList(key string) IntList {
 	return this.parent.IntList(this.root + key)
 }
 
-func (this *prefix) FloatList(key string) FloatList {
-	return this.parent.FloatList(this.root + key)
-}
-
 func (this *prefix) Set(key string) Set {
 	return this.parent.Set(this.root + key)
 }
@@ -72,20 +98,12 @@ func (this *prefix) IntSet(key string) IntSet {
 	return this.parent.IntSet(this.root + key)
 }
 
-func (this *prefix) FloatSet(key string) FloatSet {
-	return this.parent.FloatSet(this.root + key)
-}
-
 func (this *prefix) SortedSet(key string) SortedSet {
 	return this.parent.SortedSet(this.root + key)
 }
 
 func (this *prefix) SortedIntSet(key string) SortedIntSet {
 	return this.parent.SortedIntSet(this.root + key)
-}
-
-func (this *prefix) SortedFloatSet(key string) SortedFloatSet {
-	return this.parent.SortedFloatSet(this.root + key)
 }
 
 func (this *prefix) Mutex(key string) Mutex {

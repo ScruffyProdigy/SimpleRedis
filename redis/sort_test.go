@@ -107,7 +107,6 @@ func TestSorting(t *testing.T) {
 	//	Storage
 	StringStorage := r.List("Test_String_Storage")
 	IntStorage := r.IntList("Test_Int_Storage")
-	FloatStorage := r.FloatList("Test_Float_Storage")
 
 	//	Lists
 
@@ -219,15 +218,6 @@ func TestSorting(t *testing.T) {
 		end := <-IntStorage.GetFromRange(0, -1)
 		if len(end) != 5 || end[0] != 10 || end[1] != 7 || end[2] != 9 || end[3] != 6 || end[4] != 8 {
 			t.Error("Result Should be [10 7 9 6 8], not", end)
-		}
-	}
-
-	if res := <-str_list.SortAlphabetically().GetFloatsFromAndStoreIn("float_*", FloatStorage); res != 5 {
-		t.Error("Should store 5 elements")
-	} else {
-		end := <-FloatStorage.GetFromRange(0, -1)
-		if len(end) != 5 || end[0] != 0.9 || end[1] != 0.7 || end[2] != 1.0 || end[3] != 0.8 || end[4] != 0.6 {
-			t.Error("Result Should be [0.9 0.7 1.0 0.8 0.6], not", end)
 		}
 	}
 
@@ -348,144 +338,9 @@ func TestSorting(t *testing.T) {
 		}
 	}
 
-	if res := <-int_list.SortNumerically().GetFloatsFromAndStoreIn("float_*", FloatStorage); res != 5 {
-		t.Error("Should store 5 elements")
-	} else {
-		end := <-FloatStorage.GetFromRange(0, -1)
-		if len(end) != 5 || end[0] != 0.9 || end[1] != 0.7 || end[2] != 1.0 || end[3] != 0.8 || end[4] != 0.6 {
-			t.Error("Result Should be [0.9 0.7 1.0 0.8 0.6], not", end)
-		}
-	}
-
 	<-int_list.RightPush(6)
 
 	if res := <-int_list.SortNumerically().GetFrom("string_*"); len(res) != 6 || res[5] != nil {
-		t.Error("New element should not be found in lookup")
-	}
-
-	float_list := r.FloatList("Test_Sort_FloatList")
-	float_list.Delete()
-	<-float_list.RightPush(0.3)
-	<-float_list.RightPush(0.1)
-	<-float_list.RightPush(0.4)
-	<-float_list.RightPush(0.2)
-	<-float_list.RightPush(0.5)
-
-	if res := <-float_list.SortNumerically().GetFloats(); len(res) != 5 || res[0] != 0.1 || res[1] != 0.2 || res[2] != 0.3 || res[3] != 0.4 || res[4] != 0.5 {
-		t.Error("Should be [0.1 0.2 0.3 0.4 0.5], not", res)
-	}
-
-	if res := <-float_list.SortNumerically().Reverse().GetFloats(); len(res) != 5 || res[0] != 0.5 || res[1] != 0.4 || res[2] != 0.3 || res[3] != 0.2 || res[4] != 0.1 {
-		t.Error("Should be [E D C B A], not", res)
-	}
-
-	if res := <-float_list.SortNumerically().Limit(1, 3).GetFloats(); len(res) != 3 || res[0] != 0.2 || res[1] != 0.3 || res[2] != 0.4 {
-		t.Error("Should be [B C D], not", res)
-	}
-
-	if res := <-float_list.SortNumerically().Limit(0, 3).Reverse().GetFloats(); len(res) != 3 || res[0] != 0.5 || res[1] != 0.4 || res[2] != 0.3 {
-		t.Error("Should be [E D C], not", res)
-	}
-
-	if res := <-float_list.SortAlphabetically().By("string_*").GetFloats(); len(res) != 5 || res[0] != 0.5 || res[1] != 0.3 || res[2] != 0.1 || res[3] != 0.4 || res[4] != 0.2 {
-		t.Error("Should be [E C A D B], not", res)
-	}
-
-	if res := <-float_list.SortNumerically().By("integer_*").GetFloats(); len(res) != 5 || res[0] != 0.4 || res[1] != 0.2 || res[2] != 0.5 || res[3] != 0.3 || res[4] != 0.1 {
-		t.Error("Should be [D B E C A], not", res)
-	}
-
-	if res := <-float_list.SortNumerically().By("float_*").GetFloats(); len(res) != 5 || res[0] != 0.5 || res[1] != 0.2 || res[2] != 0.4 || res[3] != 0.1 || res[4] != 0.3 {
-		t.Error("Should be [E B D A C], not", res)
-	}
-
-	if res := <-float_list.SortNumerically().GetFrom("string_*"); len(res) != 5 || res[0] == nil || *res[0] != "H" || res[1] == nil || *res[1] != "J" || res[2] == nil || *res[2] != "G" || res[3] == nil || *res[3] != "I" || res[4] == nil || *res[4] != "F" {
-		var result [5]string
-		for i, sec := range res {
-			if sec != nil {
-				result[i] = *sec
-			} else {
-				result[i] = "nil"
-			}
-		}
-		t.Error("Should be [H J G I F], not [", result, "]")
-	}
-
-	if res := <-float_list.SortNumerically().GetIntsFrom("integer_*"); len(res) != 5 || res[0] == nil || *res[0] != 10 || res[1] == nil || *res[1] != 7 || res[2] == nil || *res[2] != 9 || res[3] == nil || *res[3] != 6 || res[4] == nil || *res[4] != 8 {
-		var result [5]string
-		for i, sec := range res {
-			if sec != nil {
-				result[i] = itoa(*sec)
-			} else {
-				result[i] = "nil"
-			}
-		}
-		t.Error("Should be [10 7 9 6 8], not [", result, "]")
-	}
-
-	if res := <-float_list.SortNumerically().GetFloatsFrom("float_*"); len(res) != 5 || res[0] == nil || *res[0] != 0.9 || res[1] == nil || *res[1] != 0.7 || res[2] == nil || *res[2] != 1.0 || res[3] == nil || *res[3] != 0.8 || res[4] == nil || *res[4] != 0.6 {
-		var result [5]string
-		for i, sec := range res {
-			if sec != nil {
-				result[i] = ftoa(*sec)
-			} else {
-				result[i] = "nil"
-			}
-		}
-		t.Error("Should be [0.9 0.7 1.0 0.8 0.6], not [", result, "]")
-	}
-
-	if res := <-float_list.SortNumerically().By("integer_*").GetFloatsFrom("float_*"); len(res) != 5 || res[0] == nil || *res[0] != 0.8 || res[1] == nil || *res[1] != 0.7 || res[2] == nil || *res[2] != 0.6 || res[3] == nil || *res[3] != 1.0 || res[4] == nil || *res[4] != 0.9 {
-		var result [5]string
-		for i, sec := range res {
-			if sec != nil {
-				result[i] = ftoa(*sec)
-			} else {
-				result[i] = "nil"
-			}
-		}
-		t.Error("Should be [0.8 0.7 0.6 1.0 0.8], not [", result, "]")
-	}
-
-	if res := <-float_list.SortNumerically().StoreFloats(FloatStorage); res != 5 {
-		t.Error("Should store 5 elements")
-	} else {
-		end := <-FloatStorage.GetFromRange(0, -1)
-		if len(end) != 5 || end[0] != 0.1 || end[1] != 0.2 || end[2] != 0.3 || end[3] != 0.4 || end[4] != 0.5 {
-			t.Error("Result Should be [0.1 0.2 0.3 0.4 0.5], not", end)
-		}
-	}
-
-	if res := <-float_list.SortNumerically().GetFromAndStoreIn("string_*", StringStorage); res != 5 {
-		t.Error("Should store 5 elements")
-	} else {
-		end := <-StringStorage.GetFromRange(0, -1)
-		if len(end) != 5 || end[0] != "H" || end[1] != "J" || end[2] != "G" || end[3] != "I" || end[4] != "F" {
-			t.Error("Result Should be [E C A D B], not", end)
-		}
-	}
-
-	if res := <-float_list.SortNumerically().GetIntsFromAndStoreIn("integer_*", IntStorage); res != 5 {
-		t.Error("Should store 5 elements")
-	} else {
-		end := <-IntStorage.GetFromRange(0, -1)
-		if len(end) != 5 || end[0] != 10 || end[1] != 7 || end[2] != 9 || end[3] != 6 || end[4] != 8 {
-			t.Error("Result Should be [10 7 9 6 8], not", end)
-		}
-	}
-
-	if res := <-float_list.SortNumerically().GetFloatsFromAndStoreIn("float_*", FloatStorage); res != 5 {
-		t.Error("Should store 5 elements")
-	} else {
-		end := <-FloatStorage.GetFromRange(0, -1)
-		if len(end) != 5 || end[0] != 0.9 || end[1] != 0.7 || end[2] != 1.0 || end[3] != 0.8 || end[4] != 0.6 {
-			t.Error("Result Should be [0.9 0.7 1.0 0.8 0.6], not", end)
-		}
-	}
-
-	<-float_list.RightPush(0.25)
-
-	if res := <-float_list.SortNumerically().GetFrom("string_*"); len(res) != 6 || res[2] != nil {
 		t.Error("New element should not be found in lookup")
 	}
 
@@ -599,15 +454,6 @@ func TestSorting(t *testing.T) {
 		end := <-IntStorage.GetFromRange(0, -1)
 		if len(end) != 5 || end[0] != 10 || end[1] != 7 || end[2] != 9 || end[3] != 6 || end[4] != 8 {
 			t.Error("Result Should be [10 7 9 6 8], not", end)
-		}
-	}
-
-	if res := <-str_set.SortAlphabetically().GetFloatsFromAndStoreIn("float_*", FloatStorage); res != 5 {
-		t.Error("Should store 5 elements")
-	} else {
-		end := <-FloatStorage.GetFromRange(0, -1)
-		if len(end) != 5 || end[0] != 0.9 || end[1] != 0.7 || end[2] != 1.0 || end[3] != 0.8 || end[4] != 0.6 {
-			t.Error("Result Should be [0.9 0.7 1.0 0.8 0.6], not", end)
 		}
 	}
 
@@ -728,148 +574,9 @@ func TestSorting(t *testing.T) {
 		}
 	}
 
-	if res := <-int_set.SortNumerically().GetFloatsFromAndStoreIn("float_*", FloatStorage); res != 5 {
-		t.Error("Should store 5 elements")
-	} else {
-		end := <-FloatStorage.GetFromRange(0, -1)
-		if len(end) != 5 || end[0] != 0.9 || end[1] != 0.7 || end[2] != 1.0 || end[3] != 0.8 || end[4] != 0.6 {
-			t.Error("Result Should be [0.9 0.7 1.0 0.8 0.6], not", end)
-		}
-	}
-
 	<-int_set.Add(6)
 
 	if res := <-int_set.SortNumerically().GetFrom("string_*"); len(res) != 6 || res[5] != nil {
-		t.Error("New element should not be found in lookup")
-	}
-
-	float_set := r.FloatSet("Test_Sort_FloatSet")
-	float_set.Delete()
-	<-float_set.Add(0.3)
-	<-float_set.Add(0.1)
-	<-float_set.Add(0.4)
-	<-float_set.Add(0.2)
-	<-float_set.Add(0.5)
-
-	if res := <-float_set.SortNumerically().GetFloats(); len(res) != 5 || res[0] != 0.1 || res[1] != 0.2 || res[2] != 0.3 || res[3] != 0.4 || res[4] != 0.5 {
-		t.Error("Should be [1 2 3 4 5], not", res)
-	}
-
-	if res := <-float_set.SortNumerically().GetFloats(); len(res) != 5 || res[0] != 0.1 || res[1] != 0.2 || res[2] != 0.3 || res[3] != 0.4 || res[4] != 0.5 {
-		t.Error("Should be [0.1 0.2 0.3 0.4 0.5], not", res)
-	}
-
-	if res := <-float_set.SortNumerically().Reverse().GetFloats(); len(res) != 5 || res[0] != 0.5 || res[1] != 0.4 || res[2] != 0.3 || res[3] != 0.2 || res[4] != 0.1 {
-		t.Error("Should be [E D C B A], not", res)
-	}
-
-	if res := <-float_set.SortNumerically().Limit(1, 3).GetFloats(); len(res) != 3 || res[0] != 0.2 || res[1] != 0.3 || res[2] != 0.4 {
-		t.Error("Should be [B C D], not", res)
-	}
-
-	if res := <-float_set.SortNumerically().Limit(0, 3).Reverse().GetFloats(); len(res) != 3 || res[0] != 0.5 || res[1] != 0.4 || res[2] != 0.3 {
-		t.Error("Should be [E D C], not", res)
-	}
-
-	if res := <-float_set.SortAlphabetically().By("string_*").GetFloats(); len(res) != 5 || res[0] != 0.5 || res[1] != 0.3 || res[2] != 0.1 || res[3] != 0.4 || res[4] != 0.2 {
-		t.Error("Should be [E C A D B], not", res)
-	}
-
-	if res := <-float_set.SortNumerically().By("integer_*").GetFloats(); len(res) != 5 || res[0] != 0.4 || res[1] != 0.2 || res[2] != 0.5 || res[3] != 0.3 || res[4] != 0.1 {
-		t.Error("Should be [D B E C A], not", res)
-	}
-
-	if res := <-float_set.SortNumerically().By("float_*").GetFloats(); len(res) != 5 || res[0] != 0.5 || res[1] != 0.2 || res[2] != 0.4 || res[3] != 0.1 || res[4] != 0.3 {
-		t.Error("Should be [E B D A C], not", res)
-	}
-
-	if res := <-float_set.SortNumerically().GetFrom("string_*"); len(res) != 5 || res[0] == nil || *res[0] != "H" || res[1] == nil || *res[1] != "J" || res[2] == nil || *res[2] != "G" || res[3] == nil || *res[3] != "I" || res[4] == nil || *res[4] != "F" {
-		var result [5]string
-		for i, sec := range res {
-			if sec != nil {
-				result[i] = *sec
-			} else {
-				result[i] = "nil"
-			}
-		}
-		t.Error("Should be [H J G I F], not [", result, "]")
-	}
-
-	if res := <-float_set.SortNumerically().GetIntsFrom("integer_*"); len(res) != 5 || res[0] == nil || *res[0] != 10 || res[1] == nil || *res[1] != 7 || res[2] == nil || *res[2] != 9 || res[3] == nil || *res[3] != 6 || res[4] == nil || *res[4] != 8 {
-		var result [5]string
-		for i, sec := range res {
-			if sec != nil {
-				result[i] = itoa(*sec)
-			} else {
-				result[i] = "nil"
-			}
-		}
-		t.Error("Should be [10 7 9 6 8], not [", result, "]")
-	}
-
-	if res := <-float_set.SortNumerically().GetFloatsFrom("float_*"); len(res) != 5 || res[0] == nil || *res[0] != 0.9 || res[1] == nil || *res[1] != 0.7 || res[2] == nil || *res[2] != 1.0 || res[3] == nil || *res[3] != 0.8 || res[4] == nil || *res[4] != 0.6 {
-		var result [5]string
-		for i, sec := range res {
-			if sec != nil {
-				result[i] = ftoa(*sec)
-			} else {
-				result[i] = "nil"
-			}
-		}
-		t.Error("Should be [0.9 0.7 1.0 0.8 0.6], not [", result, "]")
-	}
-
-	if res := <-float_set.SortNumerically().By("integer_*").GetFloatsFrom("float_*"); len(res) != 5 || res[0] == nil || *res[0] != 0.8 || res[1] == nil || *res[1] != 0.7 || res[2] == nil || *res[2] != 0.6 || res[3] == nil || *res[3] != 1.0 || res[4] == nil || *res[4] != 0.9 {
-		var result [5]string
-		for i, sec := range res {
-			if sec != nil {
-				result[i] = ftoa(*sec)
-			} else {
-				result[i] = "nil"
-			}
-		}
-		t.Error("Should be [0.8 0.7 0.6 1.0 0.8], not [", result, "]")
-	}
-
-	if res := <-float_set.SortNumerically().StoreFloats(FloatStorage); res != 5 {
-		t.Error("Should store 5 elements")
-	} else {
-		end := <-FloatStorage.GetFromRange(0, -1)
-		if len(end) != 5 || end[0] != 0.1 || end[1] != 0.2 || end[2] != 0.3 || end[3] != 0.4 || end[4] != 0.5 {
-			t.Error("Result Should be [0.1 0.2 0.3 0.4 0.5], not", end)
-		}
-	}
-
-	if res := <-float_set.SortNumerically().GetFromAndStoreIn("string_*", StringStorage); res != 5 {
-		t.Error("Should store 5 elements")
-	} else {
-		end := <-StringStorage.GetFromRange(0, -1)
-		if len(end) != 5 || end[0] != "H" || end[1] != "J" || end[2] != "G" || end[3] != "I" || end[4] != "F" {
-			t.Error("Result Should be [E C A D B], not", end)
-		}
-	}
-
-	if res := <-float_set.SortNumerically().GetIntsFromAndStoreIn("integer_*", IntStorage); res != 5 {
-		t.Error("Should store 5 elements")
-	} else {
-		end := <-IntStorage.GetFromRange(0, -1)
-		if len(end) != 5 || end[0] != 10 || end[1] != 7 || end[2] != 9 || end[3] != 6 || end[4] != 8 {
-			t.Error("Result Should be [10 7 9 6 8], not", end)
-		}
-	}
-
-	if res := <-float_set.SortNumerically().GetFloatsFromAndStoreIn("float_*", FloatStorage); res != 5 {
-		t.Error("Should store 5 elements")
-	} else {
-		end := <-FloatStorage.GetFromRange(0, -1)
-		if len(end) != 5 || end[0] != 0.9 || end[1] != 0.7 || end[2] != 1.0 || end[3] != 0.8 || end[4] != 0.6 {
-			t.Error("Result Should be [0.9 0.7 1.0 0.8 0.6], not", end)
-		}
-	}
-
-	<-float_set.Add(0.25)
-
-	if res := <-float_set.SortNumerically().GetFrom("string_*"); len(res) != 6 || res[2] != nil {
 		t.Error("New element should not be found in lookup")
 	}
 
@@ -983,15 +690,6 @@ func TestSorting(t *testing.T) {
 		end := <-IntStorage.GetFromRange(0, -1)
 		if len(end) != 5 || end[0] != 10 || end[1] != 7 || end[2] != 9 || end[3] != 6 || end[4] != 8 {
 			t.Error("Result Should be [10 7 9 6 8], not", end)
-		}
-	}
-
-	if res := <-str_ss.SortAlphabetically().GetFloatsFromAndStoreIn("float_*", FloatStorage); res != 5 {
-		t.Error("Should store 5 elements")
-	} else {
-		end := <-FloatStorage.GetFromRange(0, -1)
-		if len(end) != 5 || end[0] != 0.9 || end[1] != 0.7 || end[2] != 1.0 || end[3] != 0.8 || end[4] != 0.6 {
-			t.Error("Result Should be [0.9 0.7 1.0 0.8 0.6], not", end)
 		}
 	}
 
@@ -1112,152 +810,9 @@ func TestSorting(t *testing.T) {
 		}
 	}
 
-	if res := <-int_ss.SortNumerically().GetFloatsFromAndStoreIn("float_*", FloatStorage); res != 5 {
-		t.Error("Should store 5 elements")
-	} else {
-		end := <-FloatStorage.GetFromRange(0, -1)
-		if len(end) != 5 || end[0] != 0.9 || end[1] != 0.7 || end[2] != 1.0 || end[3] != 0.8 || end[4] != 0.6 {
-			t.Error("Result Should be [0.9 0.7 1.0 0.8 0.6], not", end)
-		}
-	}
-
 	<-int_ss.Add(6, 2.5)
 
 	if res := <-int_ss.SortNumerically().GetFrom("string_*"); len(res) != 6 || res[5] != nil {
-		t.Error("New element should not be found in lookup")
-	}
-
-	float_ss := r.SortedFloatSet("Test_Sort_SortedFloatSet")
-	float_ss.Delete()
-	<-float_ss.Add(0.3, 1)
-	<-float_ss.Add(0.1, 2)
-	<-float_ss.Add(0.4, 3)
-	<-float_ss.Add(0.2, 4)
-	<-float_ss.Add(0.5, 5)
-
-	if res := <-float_ss.SortNumerically().GetFloats(); len(res) != 5 || res[0] != 0.1 || res[1] != 0.2 || res[2] != 0.3 || res[3] != 0.4 || res[4] != 0.5 {
-		t.Error("Should be [1 2 3 4 5], not", res)
-	}
-
-	if res := <-float_ss.SortNumerically().GetFloats(); len(res) != 5 || res[0] != 0.1 || res[1] != 0.2 || res[2] != 0.3 || res[3] != 0.4 || res[4] != 0.5 {
-		t.Error("Should be [1 2 3 4 5], not", res)
-	}
-
-	if res := <-float_ss.SortNumerically().GetFloats(); len(res) != 5 || res[0] != 0.1 || res[1] != 0.2 || res[2] != 0.3 || res[3] != 0.4 || res[4] != 0.5 {
-		t.Error("Should be [0.1 0.2 0.3 0.4 0.5], not", res)
-	}
-
-	if res := <-float_ss.SortNumerically().Reverse().GetFloats(); len(res) != 5 || res[0] != 0.5 || res[1] != 0.4 || res[2] != 0.3 || res[3] != 0.2 || res[4] != 0.1 {
-		t.Error("Should be [E D C B A], not", res)
-	}
-
-	if res := <-float_ss.SortNumerically().Limit(1, 3).GetFloats(); len(res) != 3 || res[0] != 0.2 || res[1] != 0.3 || res[2] != 0.4 {
-		t.Error("Should be [B C D], not", res)
-	}
-
-	if res := <-float_ss.SortNumerically().Limit(0, 3).Reverse().GetFloats(); len(res) != 3 || res[0] != 0.5 || res[1] != 0.4 || res[2] != 0.3 {
-		t.Error("Should be [E D C], not", res)
-	}
-
-	if res := <-float_ss.SortAlphabetically().By("string_*").GetFloats(); len(res) != 5 || res[0] != 0.5 || res[1] != 0.3 || res[2] != 0.1 || res[3] != 0.4 || res[4] != 0.2 {
-		t.Error("Should be [E C A D B], not", res)
-	}
-
-	if res := <-float_ss.SortNumerically().By("integer_*").GetFloats(); len(res) != 5 || res[0] != 0.4 || res[1] != 0.2 || res[2] != 0.5 || res[3] != 0.3 || res[4] != 0.1 {
-		t.Error("Should be [D B E C A], not", res)
-	}
-
-	if res := <-float_ss.SortNumerically().By("float_*").GetFloats(); len(res) != 5 || res[0] != 0.5 || res[1] != 0.2 || res[2] != 0.4 || res[3] != 0.1 || res[4] != 0.3 {
-		t.Error("Should be [E B D A C], not", res)
-	}
-
-	if res := <-float_ss.SortNumerically().GetFrom("string_*"); len(res) != 5 || res[0] == nil || *res[0] != "H" || res[1] == nil || *res[1] != "J" || res[2] == nil || *res[2] != "G" || res[3] == nil || *res[3] != "I" || res[4] == nil || *res[4] != "F" {
-		var result [5]string
-		for i, sec := range res {
-			if sec != nil {
-				result[i] = *sec
-			} else {
-				result[i] = "nil"
-			}
-		}
-		t.Error("Should be [H J G I F], not [", result, "]")
-	}
-
-	if res := <-float_ss.SortNumerically().GetIntsFrom("integer_*"); len(res) != 5 || res[0] == nil || *res[0] != 10 || res[1] == nil || *res[1] != 7 || res[2] == nil || *res[2] != 9 || res[3] == nil || *res[3] != 6 || res[4] == nil || *res[4] != 8 {
-		var result [5]string
-		for i, sec := range res {
-			if sec != nil {
-				result[i] = itoa(*sec)
-			} else {
-				result[i] = "nil"
-			}
-		}
-		t.Error("Should be [10 7 9 6 8], not [", result, "]")
-	}
-
-	if res := <-float_ss.SortNumerically().GetFloatsFrom("float_*"); len(res) != 5 || res[0] == nil || *res[0] != 0.9 || res[1] == nil || *res[1] != 0.7 || res[2] == nil || *res[2] != 1.0 || res[3] == nil || *res[3] != 0.8 || res[4] == nil || *res[4] != 0.6 {
-		var result [5]string
-		for i, sec := range res {
-			if sec != nil {
-				result[i] = ftoa(*sec)
-			} else {
-				result[i] = "nil"
-			}
-		}
-		t.Error("Should be [0.9 0.7 1.0 0.8 0.6], not [", result, "]")
-	}
-
-	if res := <-float_ss.SortNumerically().By("integer_*").GetFloatsFrom("float_*"); len(res) != 5 || res[0] == nil || *res[0] != 0.8 || res[1] == nil || *res[1] != 0.7 || res[2] == nil || *res[2] != 0.6 || res[3] == nil || *res[3] != 1.0 || res[4] == nil || *res[4] != 0.9 {
-		var result [5]string
-		for i, sec := range res {
-			if sec != nil {
-				result[i] = ftoa(*sec)
-			} else {
-				result[i] = "nil"
-			}
-		}
-		t.Error("Should be [0.8 0.7 0.6 1.0 0.8], not [", result, "]")
-	}
-
-	if res := <-float_ss.SortNumerically().StoreFloats(FloatStorage); res != 5 {
-		t.Error("Should store 5 elements")
-	} else {
-		end := <-FloatStorage.GetFromRange(0, -1)
-		if len(end) != 5 || end[0] != 0.1 || end[1] != 0.2 || end[2] != 0.3 || end[3] != 0.4 || end[4] != 0.5 {
-			t.Error("Result Should be [0.1 0.2 0.3 0.4 0.5], not", end)
-		}
-	}
-
-	if res := <-float_ss.SortNumerically().GetFromAndStoreIn("string_*", StringStorage); res != 5 {
-		t.Error("Should store 5 elements")
-	} else {
-		end := <-StringStorage.GetFromRange(0, -1)
-		if len(end) != 5 || end[0] != "H" || end[1] != "J" || end[2] != "G" || end[3] != "I" || end[4] != "F" {
-			t.Error("Result Should be [E C A D B], not", end)
-		}
-	}
-
-	if res := <-float_ss.SortNumerically().GetIntsFromAndStoreIn("integer_*", IntStorage); res != 5 {
-		t.Error("Should store 5 elements")
-	} else {
-		end := <-IntStorage.GetFromRange(0, -1)
-		if len(end) != 5 || end[0] != 10 || end[1] != 7 || end[2] != 9 || end[3] != 6 || end[4] != 8 {
-			t.Error("Result Should be [10 7 9 6 8], not", end)
-		}
-	}
-
-	if res := <-float_ss.SortNumerically().GetFloatsFromAndStoreIn("float_*", FloatStorage); res != 5 {
-		t.Error("Should store 5 elements")
-	} else {
-		end := <-FloatStorage.GetFromRange(0, -1)
-		if len(end) != 5 || end[0] != 0.9 || end[1] != 0.7 || end[2] != 1.0 || end[3] != 0.8 || end[4] != 0.6 {
-			t.Error("Result Should be [0.9 0.7 1.0 0.8 0.6], not", end)
-		}
-	}
-
-	<-float_ss.Add(0.25, 0.25)
-
-	if res := <-float_ss.SortNumerically().GetFrom("string_*"); len(res) != 6 || res[2] != nil {
 		t.Error("New element should not be found in lookup")
 	}
 }

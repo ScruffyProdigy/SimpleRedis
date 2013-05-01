@@ -25,7 +25,7 @@ func TestMutex(t *testing.T) {
 					}
 				}
 			}()
-			m.Force(func() {
+			m.Force(func(int) {
 				usage++
 
 				if usage > 1 {
@@ -55,7 +55,7 @@ func TestMutex(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
 		go func() {
-			worked := m.Try(func() {
+			worked := m.Try(func(int) {
 				usage++
 
 				if usage > 1 {
@@ -103,7 +103,7 @@ func TestSemaphore(t *testing.T) {
 					}
 				}
 			}()
-			m.Force(func() {
+			m.Force(func(int) {
 				usage++
 
 				if usage > 3 {
@@ -134,7 +134,7 @@ func TestSemaphore(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
 		go func() {
-			worked := m.Try(func() {
+			worked := m.Try(func(int) {
 				usage++
 
 				if usage > 3 {

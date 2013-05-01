@@ -8,6 +8,7 @@ import (
 	"time"
 )
 
+//The Config details how you plan to go about communicating with Redis
 type Config struct {
 	NetType         string `json:"nettype"`
 	NetAddress      string `json:"netaddr"`
@@ -16,6 +17,8 @@ type Config struct {
 	ConnectionCount int    `json:"conncount"`
 }
 
+//DefaultConfiguration returns a config with the easiest method for communicating with Redis
+//All of the fields are public, so anything that needs to be changed for your setup can be done without affecting other fields
 func DefaultConfiguration() Config {
 	return Config{
 		NetType:         "tcp",
@@ -46,6 +49,7 @@ func getError(rec interface{}) error {
 	return errors.New("Unknown Error:" /*+fmt.Sprintf(rec)*/)
 }
 
+// The Client is the base for all communication to and from Redis
 type Client struct {
 	nextID       int
 	isClosed     bool
@@ -55,6 +59,7 @@ type Client struct {
 	fErrCallback errCallbackFunc      //	a callback function - since we operate in a separate goroutine, we can't return an error, instead we call this function sending it the error, and the command we tried to issue
 }
 
+//New gives back a Client that communicates using the details specified in the supplied Config
 func New(config Config) (r *Client, e error) {
 	//user has not had a chance to set an error callback at this point
 	//so we should exit gracefully if an error happens during load
@@ -84,6 +89,8 @@ func New(config Config) (r *Client, e error) {
 	return this, nil
 }
 
+//Load reads in information, and uses the JSON information it finds therein to find the communcation hookup details for Redis
+//it then returns a Client based on the supplied information
 func Load(configfile io.Reader) (*Client, error) {
 	config := DefaultConfiguration()
 	dec := json.NewDecoder(configfile)
@@ -95,6 +102,8 @@ func Load(configfile io.Reader) (*Client, error) {
 	return New(config)
 }
 
+//Close frees up all connections previously allocated
+//BUG: If you have connections still in use, things can get messy
 func (this *Client) Close() error {
 	if this.isClosed {
 		return errors.New("Redis is already closed!")
@@ -116,6 +125,7 @@ func (this *Client) Close() error {
 	return nil
 }
 
+//Execute allows commands to be executed directly through the Client without needing to specify a key
 func (this Client) Execute(command command) {
 	go this.useConnection(func(conn *Connection) {
 		conn.Execute(command)
@@ -126,6 +136,8 @@ func (this Client) errCallback(e error, s string) {
 	this.fErrCallback.Call(e, s)
 }
 
+//Since redis operates in a separate thread, it isn't always possible to return an error status easily
+//SetErrorCallback allows you to react to an error when it happens
 func (this *Client) SetErrorCallback(callback func(error, string)) {
 	this.fErrCallback = errCallbackFunc(callback)
 }
@@ -176,82 +188,87 @@ func (this *Client) useNewConnection(callback func(*Connection)) {
 	callback(conn)
 }
 
+//Creates a basic key
 func (this *Client) Key(key string) Key {
 	return newKey(this, key)
 }
 
+//Creates a String object
 func (this *Client) String(key string) String {
 	return newString(this, key)
 }
 
+//Creates an Integer object
 func (this *Client) Integer(key string) Integer {
 	return newInteger(this, key)
 }
 
+//Creates a Float object
 func (this *Client) Float(key string) Float {
 	return newFloat(this, key)
 }
 
+//Creates a Bits object
 func (this *Client) Bits(key string) Bits {
 	return newBits(this, key)
 }
 
+//Creates a Hash object
 func (this *Client) Hash(key string) Hash {
 	return newHash(this, key)
 }
 
+//Creates a List object
 func (this *Client) List(key string) List {
 	return newList(this, key)
 }
 
+//Creates an IntList object
 func (this *Client) IntList(key string) IntList {
 	return newIntList(this, key)
 }
 
-func (this *Client) FloatList(key string) FloatList {
-	return newFloatList(this, key)
-}
-
+//Creates a Set Object
 func (this *Client) Set(key string) Set {
 	return newSet(this, key)
 }
 
+//Creates an IntSet Object
 func (this *Client) IntSet(key string) IntSet {
 	return newIntSet(this, key)
 }
 
-func (this *Client) FloatSet(key string) FloatSet {
-	return newFloatSet(this, key)
-}
-
+//Creates a SortedSet Object
 func (this *Client) SortedSet(key string) SortedSet {
 	return newSortedSet(this, key)
 }
 
+//Creates a SortedIntSet Object
 func (this *Client) SortedIntSet(key string) SortedIntSet {
 	return newSortedIntSet(this, key)
 }
 
-func (this *Client) SortedFloatSet(key string) SortedFloatSet {
-	return newSortedFloatSet(this, key)
-}
-
+//Creates a Mutex Object
 func (this *Client) Mutex(key string) Mutex {
 	return newMutex(this, key, 1)
 }
 
+//Creates a Semaphore Object
 func (this *Client) Semaphore(key string, count int) Mutex {
 	return newMutex(this, key, count)
 }
 
+//Creates a ReadWriteMutex Object
 func (this *Client) ReadWriteMutex(key string, readers int) *ReadWriteMutex {
 	return newRWMutex(this, key, readers)
 }
 
+//Creates a Channel Object
 func (this *Client) Channel(key string) Channel {
 	return newChannel(this, key)
 }
 
+//Creates a Prefix Object
 func (this *Client) Prefix(key string) Prefix {
 	return newPrefix(this, key)
 }

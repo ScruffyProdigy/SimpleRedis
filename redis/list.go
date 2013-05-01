@@ -10,6 +10,7 @@ func newList(client SafeExecutor, key string) List {
 	}
 }
 
+//IsValid returns whether the underlying redis object can use the commands in this object
 func (this List) IsValid() <-chan bool {
 	c := make(chan bool, 1)
 	func() {
@@ -116,6 +117,8 @@ func (this List) BlockUntilMoveLastItemToList(newList List) <-chan string {
 func (this List) BlockUntilMoveLastItemToListWithTimeout(newList List, timeout int) <-chan string {
 	return StringCommand(this, this.args("brpoplpush", newList.key, itoa(timeout)))
 }
+
+//Use allows you to use this key on a different executor
 func (this List) Use(e SafeExecutor) List {
 	this.client = e
 	return this

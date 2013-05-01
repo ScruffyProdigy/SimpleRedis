@@ -32,10 +32,12 @@ type command interface {
 	callback() func(*response) error
 }
 
+//Anything that can execute a command is an Executor
 type Executor interface {
 	Execute(command)
 }
 
+//Anything that can execute a command, and can deal with resulting errors is a SafeExecutor
 type SafeExecutor interface {
 	Executor
 	errCallback(error, string)
@@ -190,6 +192,8 @@ func getMultiBulk(conn io.Reader) (*response, error) {
 	return r, nil
 }
 
+//TODO: change the slice argument for each Command Function to become a variable length parameter
+
 /*
 
 BoolCommand - the command type used when a boolean response is expected
@@ -201,6 +205,8 @@ type boolCommand struct {
 	output chan<- bool
 }
 
+//BoolCommand executes the command specified by the arguments specified
+//It returns the response Redis generates coerced into a boolean value
 func BoolCommand(e Executor, args []string) <-chan bool {
 	c := make(chan bool, 1)
 	e.Execute(boolCommand{args, c})
@@ -232,6 +238,8 @@ type intCommand struct {
 	output chan<- int
 }
 
+//IntCommand executes the command specified by the arguments specified
+//It returns the response Redis generates coerced into an integer value
 func IntCommand(e Executor, args []string) <-chan int {
 	c := make(chan int, 1)
 	e.Execute(intCommand{args, c})
@@ -267,6 +275,8 @@ type floatCommand struct {
 	output chan<- float64
 }
 
+//FloatCommand executes the command specified by the arguments specified
+//It returns the response Redis generates coerced into a float value
 func FloatCommand(e Executor, args []string) <-chan float64 {
 	c := make(chan float64, 1)
 	e.Execute(floatCommand{args, c})
@@ -302,6 +312,8 @@ type stringCommand struct {
 	output chan<- string
 }
 
+//StringCommand executes the command specified by the arguments specified
+//It returns the response Redis generates coerced into a string value
 func StringCommand(e Executor, args []string) <-chan string {
 	c := make(chan string, 1)
 	e.Execute(stringCommand{args, c})
@@ -334,6 +346,8 @@ type sliceCommand struct {
 	output chan<- []string
 }
 
+//SliceCommand executes the command specified by the arguments specified
+//It returns the response Redis generates coerced into a slice/array
 func SliceCommand(e Executor, args []string) <-chan []string {
 	c := make(chan []string, 1)
 	e.Execute(sliceCommand{args, c})
@@ -377,6 +391,8 @@ type maybeSliceCommand struct {
 	output chan<- []*string
 }
 
+//MaybeSliceCommand executes the command specified by the arguments specified
+//It returns the response Redis generates coerced into a slice of pointers
 func MaybeSliceCommand(e Executor, args []string) <-chan []*string {
 	c := make(chan []*string, 1)
 	e.Execute(maybeSliceCommand{args, c})
@@ -416,6 +432,8 @@ type mapCommand struct {
 	output chan<- map[string]string
 }
 
+//BoolCommand executes the command specified by the arguments specified
+//It returns the response Redis generates coerced into a map
 func MapCommand(e Executor, args []string) <-chan map[string]string {
 	c := make(chan map[string]string, 1)
 	e.Execute(mapCommand{args, c})
@@ -456,6 +474,8 @@ type nilCommand struct {
 	output chan<- nothing
 }
 
+//NilCommand executes the command specified by the arguments specified
+//It does not return a usable value
 func NilCommand(e Executor, args []string) <-chan nothing {
 	c := make(chan nothing, 1)
 	e.Execute(nilCommand{args, c})

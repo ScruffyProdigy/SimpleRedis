@@ -27,7 +27,7 @@ func TestReadWriteMutices(t *testing.T) {
 	go func() {
 		for i := 0; i < read_attempts; i++ {
 			go func() {
-				rw.Read.Force(func() {
+				rw.Read.Force(func(resourceID int) {
 					usage++
 
 					if usage > reader_max {
@@ -46,7 +46,7 @@ func TestReadWriteMutices(t *testing.T) {
 	for i := 0; i < write_attempts; i++ {
 		time.Sleep(writer_interval * time.Millisecond)
 		go func() {
-			rw.Write.Force(func() {
+			rw.Write.Force(func(resourceID int) {
 				if usage > 0 {
 					t.Error("Should be no other usage when write is happening")
 				}

@@ -53,7 +53,7 @@ func TestBitsFuncs(t *testing.T) {
 	<-a.Off(15)
 	<-a.On(5)
 
-	x := <-a.And(b, c)
+	x := <-c.StoreIntersectionOf(a, b)
 	if x != 2 {
 		t.Error("we're using 2 characters, not", x)
 	}
@@ -70,7 +70,7 @@ func TestBitsFuncs(t *testing.T) {
 		t.Error("5th bit should not be set")
 	}
 
-	x = <-a.Or(b, c)
+	x = <-c.StoreUnionOf(a, b)
 	if x != 2 {
 		t.Error("we're using 2 characters, not", x)
 	}
@@ -87,7 +87,7 @@ func TestBitsFuncs(t *testing.T) {
 		t.Error("5th bit should be set")
 	}
 
-	x = <-a.Xor(b, c)
+	x = <-c.StoreDifferencesOf(a, b)
 	if x != 2 {
 		t.Error("we're using 2 characters, not", x)
 	}
@@ -104,7 +104,7 @@ func TestBitsFuncs(t *testing.T) {
 		t.Error("5th bit should be set")
 	}
 
-	x = <-a.Not(c)
+	x = <-c.StoreInverseOf(a)
 	if x != 2 {
 		t.Error("we're using 2 characters, not", x)
 	}

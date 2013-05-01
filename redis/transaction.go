@@ -55,6 +55,8 @@ func (this Client) piping(callback func(SafeExecutor) bool, queued bool) {
 	result = callback(p)
 }
 
+//Pipeline creates an Executor that will force every command issued on it to be sent at the same time (thus saving on network costs)
+//Waits until the end of the function to execute them
 func (this Client) Pipeline(callback func(SafeExecutor)) {
 	this.piping(func(e SafeExecutor) bool {
 		callback(e)
@@ -62,6 +64,8 @@ func (this Client) Pipeline(callback func(SafeExecutor)) {
 	}, false)
 }
 
+//Transaction creates an Executor that will tell redis to queue all of the commands and complete them atomically
+//(this prevents other clients from issuing commands in between yours)
 func (this Client) Transaction(callback func(SafeExecutor)) {
 	this.piping(func(p SafeExecutor) (result bool) {
 		NilCommand(p, []string{"MULTI"})
