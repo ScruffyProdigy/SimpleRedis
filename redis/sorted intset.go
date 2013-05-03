@@ -74,6 +74,18 @@ func (this SortedIntSet) ReverseIndexedBetween(start, stop int) <-chan []int {
 	return intsChannel(SliceCommand(this, this.args("zrevrange", itoa(start), itoa(stop))...))
 }
 
+//IndexedBetweenWithScores returns a map of all members between the indices and their associated scores
+//warning: golang maps are not ordered
+func (this SortedIntSet) IndexedBetweenWithScores(start, stop int) <-chan map[int]float64 {
+	return intfloatMapChannel(MapCommand(this, this.args("zrange", itoa(start), itoa(stop), "WITHSCORES")...))
+}
+
+//IndexedBetweenWithScores returns a map of all members between the reverse indices and their associated scores
+//warning: golang maps are not ordered
+func (this SortedIntSet) ReverseIndexedBetweenWithScores(start, stop int) <-chan map[int]float64 {
+	return intfloatMapChannel(MapCommand(this, this.args("zrevrange", itoa(start), itoa(stop), "WITHSCORES")...))
+}
+
 //RemoveIndexedBetween removes all members between the indices
 //returns the number of members removed
 func (this SortedIntSet) RemoveIndexedBetween(start, stop int) <-chan int {

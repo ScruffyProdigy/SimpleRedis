@@ -70,7 +70,17 @@ func (this SortedSet) ReverseIndexedBetween(start, stop int) <-chan []string {
 	return SliceCommand(this, this.args("zrevrange", itoa(start), itoa(stop))...)
 }
 
-//TODO:IndexBetweenWithScores,ReverseIndexedBetween
+//IndexedBetweenWithScores returns a map of all members between the indices and their associated scores
+//warning: golang maps are not ordered
+func (this SortedSet) IndexedBetweenWithScores(start, stop int) <-chan map[string]float64 {
+	return stringfloatMapChannel(MapCommand(this, this.args("zrange", itoa(start), itoa(stop), "WITHSCORES")...))
+}
+
+//IndexedBetweenWithScores returns a map of all members between the reverse indices and their associated scores
+//warning: golang maps are not ordered
+func (this SortedSet) ReverseIndexedBetweenWithScores(start, stop int) <-chan map[string]float64 {
+	return stringfloatMapChannel(MapCommand(this, this.args("zrevrange", itoa(start), itoa(stop), "WITHSCORES")...))
+}
 
 //RemoveIndexedBetween removes all members between the indices
 //returns the number of members removed

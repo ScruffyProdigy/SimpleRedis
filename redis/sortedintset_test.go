@@ -130,6 +130,43 @@ func TestSortedIntSets(t *testing.T) {
 	}()
 
 	go func() {
+		//bottom three with scores
+		res := <-ss.IndexedBetweenWithScores(0, 2)
+		if len(res) != 3 {
+			t.Error("Should only receive 3 members, not", len(res))
+		} else {
+			if res[1] != 1 {
+				t.Error("1 should be 1, not ", res[1])
+			}
+			if res[8] != 2 {
+				t.Error("8 should be 2, not ", res[8])
+			}
+			if res[6] != 3 {
+				t.Error("6 should be 3, not ", res[6])
+			}
+		}
+		done <- true
+	}()
+	go func() {
+		//top three with scores
+		res := <-ss.ReverseIndexedBetweenWithScores(0, 2)
+		if len(res) != 3 {
+			t.Error("Should only receive 3 members, not", len(res))
+		} else {
+			if res[7] != 10 {
+				t.Error("7 should be 10, not ", res[7])
+			}
+			if res[2] != 9 {
+				t.Error("2 should be 9, not ", res[2])
+			}
+			if res[5] != 8 {
+				t.Error("5 should be 8, not ", res[5])
+			}
+		}
+
+		done <- true
+	}()
+	go func() {
 		//get all scores at or above 7
 		base := ss.Scores().AboveOrEqualTo(7)
 

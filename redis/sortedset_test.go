@@ -130,6 +130,44 @@ func TestSortedSets(t *testing.T) {
 	}()
 
 	go func() {
+		//bottom three with scores
+		res := <-ss.IndexedBetweenWithScores(0, 2)
+		if len(res) != 3 {
+			t.Error("Should only receive 3 members, not", len(res))
+		} else {
+			if res["A"] != 1 {
+				t.Error("A should be 1, not ", res["A"])
+			}
+			if res["H"] != 2 {
+				t.Error("H should be 2, not ", res["H"])
+			}
+			if res["F"] != 3 {
+				t.Error("F should be 3, not ", res["F"])
+			}
+		}
+		done <- true
+	}()
+	go func() {
+		//top three with scores
+		res := <-ss.ReverseIndexedBetweenWithScores(0, 2)
+		if len(res) != 3 {
+			t.Error("Should only receive 3 members, not", len(res))
+		} else {
+			if res["G"] != 10 {
+				t.Error("G should be 10, not ", res["G"])
+			}
+			if res["B"] != 9 {
+				t.Error("B should be 9, not ", res["B"])
+			}
+			if res["E"] != 8 {
+				t.Error("E should be 8, not ", res["E"])
+			}
+		}
+
+		done <- true
+	}()
+
+	go func() {
 		//get all scores at or above 7
 		base := ss.Scores().AboveOrEqualTo(7)
 
@@ -238,7 +276,7 @@ func TestSortedSets(t *testing.T) {
 		done <- true
 	}()
 
-	for i := 0; i < 12; i++ {
+	for i := 0; i < 14; i++ {
 		<-done
 	}
 
