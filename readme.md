@@ -1,7 +1,7 @@
 SimpleRedis
 ===========
 
-This is a redis library for golang
+SimpleRedis is an object-oriented Redis library for golang
 
 There are a couple of differences between this library and others.
 
@@ -22,7 +22,7 @@ This accomplishes a few things:
 
 * By Default, the "Test_String" only gets defined in one place, so there are fewer chances for mistyping errors
 * It becomes easier to look up which operations are usable for different types of data
-* It more accurately models how one tends to think about the data, which is typically in terms of the redis primitives rather than the functions
+* It more accurately models how one tends to think about the data, which is typically in terms of the Redis primitives rather than the functions
 	
 If you do need to call the functions directly, You can call any of the "Command" functions in command.go
 
@@ -30,7 +30,7 @@ If you do need to call the functions directly, You can call any of the "Command"
 
 While Redis is blazing fast, it *still* has to use network I/O, and often times there will be things you can do while that is happening
 
-"`s.Get()`" returns a channel, which, when redis has returned information, will contain a string.  If you want the data immediately, you should use "`str := <-s.Get()`"
+"`s.Get()`" returns a channel, which, when Redis has returned information, will contain a string.  If you want the data immediately, you should use "`str := <-s.Get()`"
 
 The reasons for doing this are:
 
@@ -75,3 +75,5 @@ Usage
 				u.friends().Remove(otherUser.id)
 				otherUser.friends().Remove(u.id)
 			}
+			
+For more usage details, please see: http://godoc.org/github.com/ScruffyProdigy/SimpleRedis/redis
