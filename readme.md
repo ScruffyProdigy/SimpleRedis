@@ -48,10 +48,12 @@ Usage
 	* if not, make sure any object that needs to define Redis Objects has access to it
 * Create methods for your objects that return Redis Objects
 	* defining a Redis Object is a very lightweight operation, you should not need to be worried about the overhead
+	* these methods should probably be private
 
 *Example:*
 
             func (u *User) base() Redis.Prefix {
+				//namespacing everything from within the user to help prevent clashes
                 return global.Redis.Prefix("User:"+u.id+":")
             }
     
@@ -59,4 +61,17 @@ Usage
                 return u.base().IntSet("Friends")
             }
 
-* Use said objects to operate Redis
+* Create methods that interact with these objects
+	* these methods will probably be public
+
+*Example:*
+			//note: not using the channel arrows, because this is not a time-sensitive operation
+			func (u *User) AddFriend(otherUser *User) {
+				u.friends().Add(otherUser.id)
+				otherUser.friends().Add(u.id)
+			}
+			
+			func (u *User) Unfriend(otherUser *User) {
+				u.friends().Remove(otherUser.id)
+				otherUser.friends().Remove(u.id)
+			}

@@ -17,6 +17,7 @@
 	This accomplishes a few things:
 		a) By Default, the "Test_String" only gets defined in one place, so there are fewer chances for mistyping errors
 		b) It becomes easier to look up which operations are usable for different types of data
+		c) It more accurately models how one tends to think about the data, which is typically in terms of the redis primitives rather than the functions
 		
 	If you do need to call the functions directly, You can call any of the "Command" functions in command.go
 	
@@ -40,6 +41,7 @@
 		* if not, make sure any object that needs to define Redis Objects has access to it
 	3) Create methods for your objects that return Redis Objects
 		* defining a Redis Object is a very lightweight operation, you should not need to be worried about the overhead
+		* these methods should probably be private
 			func (u *User) base() Redis.Prefix {
 				return global.Redis.Prefix("User:"+u.id+":")
 			}
@@ -47,7 +49,18 @@
 			func (u *User) friends() Redis.IntSet {
 				return u.base().IntSet("Friends")
 			}
-	4) Use said objects to operate Redis
+	4) Create methods for your objects that manipulate these Redis Objects
+		* these methods will probably be public
+			//note: not using the channel arrows, because this is not a time-sensitive operation
+			func (u *User) AddFriend(otherUser *User) {
+				u.friends().Add(otherUser.id)
+				otherUser.friends().Add(u.id)
+			}
+			
+			func (u *User) Unfriend(otherUser *User) {
+				u.friends().Remove(otherUser.id)
+				otherUser.friends().Remove(u.id)
+			}
 	
 */
 package redis
