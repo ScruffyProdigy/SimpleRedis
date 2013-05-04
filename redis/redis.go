@@ -18,11 +18,11 @@ In this one, instead of calling the functions directly, you use:
 	
 This accomplishes a few things:
 
- a) By Default, the "Test_String" only gets defined in one place, so there are fewer chances for mistyping errors
+.a) By Default, the "Test_String" only gets defined in one place, so there are fewer chances for mistyping errors
 
- b) It becomes easier to look up which operations are usable for different types of data
+.b) It becomes easier to look up which operations are usable for different types of data
 
- c) It more accurately models how one tends to think about the data, which is typically in terms of the Redis primitives rather than the functions
+.c) It more accurately models how one tends to think about the data, which is typically in terms of the Redis primitives rather than the functions
 	
 If you do need to call the functions directly, You can call any of the "Command" functions in command.go
 
@@ -34,13 +34,13 @@ While Redis is blazing fast, it *still* has to use network I/O, and often times 
 
 The reasons for doing this are:
 
- a) Helps to remind you that you can do things while waiting for Redis
+.a) Helps to remind you that you can do things while waiting for Redis
 
- b) Some operations (e.g. anything sent within a transaction) don't return immediately, and the result can only be obtained by waiting
+.b) Some operations (e.g. anything sent within a transaction) don't return immediately, and the result can only be obtained by waiting
 
- c) Gives a natural interface for dealing with situations when Redis won't return anything (e.g. Popping from an empty List - "str,ok := <-l.LeftPop()")
+.c) Gives a natural interface for dealing with situations when Redis won't return anything (e.g. Popping from an empty List - "str,ok := <-l.LeftPop()")
 
- d) Makes it easier to control
+.d) Makes it easier to control
 
 *** Usage ***
 
@@ -48,15 +48,15 @@ The reasons for doing this are:
 
 2) Use the Config to create a Client object
 
- a) You will probably make this object global
+.a) You will probably make this object global
 
- b) if not, make sure any object that needs to define Redis Objects has access to it
+.b) if not, make sure any object that needs to define Redis Objects has access to it
 
 3) Create methods for your objects that return Redis Objects
 
- a) defining a Redis Object is a very lightweight operation, you should not need to be worried about the overhead
+.a) defining a Redis Object is a very lightweight operation, you should not need to be worried about the overhead
 
- b) these methods should probably be private
+.b) these methods should probably be private
 
 		func (u *User) base() Redis.Prefix {
 		//namespacing everything from within the user to help prevent clashes
@@ -68,7 +68,7 @@ The reasons for doing this are:
 		}
 
 4) Create methods that interact with these objects
- a) these methods will probably be public
+.a) these methods will probably be public
 
 		//note: not using the channel arrows, because this is not a time-sensitive operation
 		func (u *User) AddFriend(otherUser *User) {
