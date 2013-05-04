@@ -37,7 +37,7 @@ The reasons for doing this are:
 * Helps to remind you that you can do things while waiting for Redis
 * Some operations (e.g. anything sent within a transaction) don't return immediately, and the result can only be obtained by waiting
 * Gives a natural interface for dealing with situations when Redis won't return anything (e.g. Popping from an empty List - "`str,ok := <-l.LeftPop()`")
-* Makes it easier to control
+* Makes it easier to control when you pause for Redis
 
 Usage
 -----

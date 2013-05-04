@@ -40,7 +40,7 @@ The reasons for doing this are:
 
 .c) Gives a natural interface for dealing with situations when Redis won't return anything (e.g. Popping from an empty List - "str,ok := <-l.LeftPop()")
 
-.d) Makes it easier to control
+.d) Makes it easier to control when you pause for Redis
 
 *** Usage ***
 
