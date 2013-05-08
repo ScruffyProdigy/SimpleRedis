@@ -253,10 +253,9 @@ func (this intCommand) callback() func(*response) error {
 		defer close(this.output)
 		if r != nil {
 			res, err := atoi(r.val)
-			if err != nil {
-				return err
+			if err == nil {
+				this.output <- res
 			}
-			this.output <- res
 		}
 		return nil
 	}
@@ -291,9 +290,8 @@ func (this floatCommand) callback() func(*response) error {
 		if r != nil {
 			f, err := atof(r.val)
 			if err != nil {
-				return err
+				this.output <- f
 			}
-			this.output <- f
 		}
 		return nil
 	}
@@ -325,7 +323,6 @@ func (this stringCommand) arguments() []string {
 func (this stringCommand) callback() func(*response) error {
 	return func(r *response) error {
 		defer close(this.output)
-
 		if r != nil {
 			this.output <- r.val
 		}
@@ -365,7 +362,6 @@ func (this sliceCommand) callback() func(*response) error {
 			for i, line := range r.subresponses {
 				if line != nil {
 					actualResponse[i] = line.val
-					//warning, if it gets in here, could causes unintended problems
 				}
 			}
 

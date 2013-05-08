@@ -21,34 +21,34 @@ func (this String) IsValid() <-chan bool {
 	return c
 }
 
-//Set sets the value of the key or updates it if it already exists
-//returns true if setting, false if updating
+//Set sets the value of the key or updates it if it already exists - SET command
+//returns true if setting, false if updating 
 func (this String) Set(val string) <-chan nothing {
 	return NilCommand(this, this.args("set", val)...)
 }
 
-//SetIfEmpty sets the value of the key, but does nothing if it already exists
+//SetIfEmpty sets the value of the key, but does nothing if it already exists - SETNX command
 //returns true if setting, false if skipping
 func (this String) SetIfEmpty(val string) <-chan bool {
 	return BoolCommand(this, this.args("setnx", val)...)
 }
 
-//Get returns the value of the key
+//Get returns the value of the key - GET command
 func (this String) Get() <-chan string {
 	return StringCommand(this, this.args("get")...)
 }
 
-//Replace sets the value of the key and returns its old value
+//Replace sets the value of the key and returns its old value - GETSET command
 func (this String) Replace(val string) <-chan string {
 	return StringCommand(this, this.args("getset", val)...)
 }
 
-//Append appends the value to the end of the key
+//Append appends the value to the end of the key - APPEND command
 func (this String) Append(val string) <-chan int {
 	return IntCommand(this, this.args("append", val)...)
 }
 
-//Length returns the number of characters in the value of the key
+//Length returns the number of characters in the value of the key - STRLEN command
 func (this String) Length() <-chan int {
 	return IntCommand(this, this.args("strlen")...)
 }
