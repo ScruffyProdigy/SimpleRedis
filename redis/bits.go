@@ -22,6 +22,7 @@ func (this Bits) IsValid() <-chan bool {
 	return c
 }
 
+//SETBIT command - 
 //SetTo Sets a specific bit in the field to a specific value
 func (this Bits) SetTo(index int, on bool) <-chan bool {
 	if on {
@@ -30,27 +31,32 @@ func (this Bits) SetTo(index int, on bool) <-chan bool {
 	return this.Off(index)
 }
 
-//On turns on a specific bit in the field - SETBIT redis command
+//SETBIT command - 
+//On turns on a specific bit in the field
 func (this Bits) On(index int) <-chan bool {
 	return BoolCommand(this, this.args("setbit", itoa(index), "1")...)
 }
 
-//Off turns off a specific bit in the field - SETBIT redis command
+//SETBIT command - 
+//Off turns off a specific bit in the field
 func (this Bits) Off(index int) <-chan bool {
 	return BoolCommand(this, this.args("setbit", itoa(index), "0")...)
 }
 
-//Get returns whether a specific bit in the field is set - GETBIT redis command
+//GETBIT command - 
+//Get returns whether a specific bit in the field is set
 func (this Bits) Get(index int) <-chan bool {
 	return BoolCommand(this, this.args("getbit", itoa(index))...)
 }
 
-//Count returns the number of bits that are set - BITCOUNT redis command
+//BITCOUNT command - 
+//Count returns the number of bits that are set
 func (this Bits) Count(start, end int) <-chan int {
 	return IntCommand(this, this.args("bitcount")...)
 }
 
-//StoreIntersetionOf stores the result of a BITOP AND operation of other bitfields in this bitfield
+//BITOP AND command - 
+//StoreIntersetionOf stores the result of a logical and operation of other bitfields in this bitfield
 func (this Bits) StoreIntersectionOf(otherKeys ...Bits) <-chan int {
 	args := []string{"BITOP", "AND", this.key}
 	for _, key := range otherKeys {
@@ -59,7 +65,8 @@ func (this Bits) StoreIntersectionOf(otherKeys ...Bits) <-chan int {
 	return IntCommand(this, args...)
 }
 
-//StoreUnionOf stores the result of a BITOP OR operation of other bitfields in this bitfield
+//BITOP OR command - 
+//StoreUnionOf stores the result of a logical or operation of other bitfields in this bitfield
 func (this Bits) StoreUnionOf(otherKeys ...Bits) <-chan int {
 	args := []string{"BITOP", "OR", this.key}
 	for _, key := range otherKeys {
@@ -68,7 +75,8 @@ func (this Bits) StoreUnionOf(otherKeys ...Bits) <-chan int {
 	return IntCommand(this, args...)
 }
 
-//StoreDifferenceOf stores the result of a BITOP XOR operation of other bitfields in this bitfield
+//BITOP XOR command - 
+//StoreDifferenceOf stores the result of a logical xor operation of other bitfields in this bitfield
 func (this Bits) StoreDifferencesOf(otherKeys ...Bits) <-chan int {
 	args := []string{"BITOP", "XOR", this.key}
 	for _, key := range otherKeys {
@@ -77,7 +85,8 @@ func (this Bits) StoreDifferencesOf(otherKeys ...Bits) <-chan int {
 	return IntCommand(this, args...)
 }
 
-//StoreInverseOf stores the result of a BITOP NOT operation of another bitfield in this bitfield
+//BITOP NOT command - 
+//StoreInverseOf stores the result of a logical not operation of another bitfield in this bitfield
 func (this Bits) StoreInverseOf(otherKey Bits) <-chan int {
 	return IntCommand(this, "BITOP", "NOT", this.key, otherKey.key)
 }

@@ -74,8 +74,9 @@ func (this Sorter) sortargs() []string {
 	return result
 }
 
-//Limit defines the total number of results you want to receive back
-//It will skip the first "offset" results, and then only show you the next "count" results
+//Limit defines the total number of results you want to receive back.
+//It will skip the first "offset" results, and then only show you the next "count" results.
+//
 //Example: If you want to see the top 3 results, you would use field.SortNumerically().Limit(0,3)
 func (this *Sorter) Limit(offset, count int) *Sorter {
 	this.limit = &sortLimit{
@@ -86,6 +87,7 @@ func (this *Sorter) Limit(offset, count int) *Sorter {
 }
 
 //By allows you to use the current key as an index into a different set of keys
+//
 //Example: If you have a Set with {1,2,3,4,5}, and you sort By("string_*"), you will sort whatever string primitives are at string_1, string_2, string_3, string_4, and string_5
 func (this *Sorter) By(pattern string) *Sorter {
 	this.by = &sortBy{
@@ -109,6 +111,7 @@ func (this *Sorter) storeIn(dest string) *Sorter {
 }
 
 //Reverse will invert the order that you receive the results in
+//
 //Example: field.SortNumerically().Reverse() will define a descending search rather than an ascending one
 func (this *Sorter) Reverse() *Sorter {
 	this.reversed = !this.reversed
@@ -130,35 +133,34 @@ func (this *Sorter) GetFloats() <-chan []float64 {
 	return floatsChannel(this.Get())
 }
 
-//GetFrom will execute the search, but instead of returning the results, will use the results to dig into other string primitives
-//the equivalent of using a Get argument in the sort
+//GetFrom will execute the search, but instead of returning the results, will use the results to dig into other string primitives.
+//It is the equivalent of using a GET argument in the sort
 func (this *Sorter) GetFrom(pattern string) <-chan []*string {
 	this.getFrom(pattern)
 	return MaybeSliceCommand(this.key, this.key.args("sort", this.sortargs()...)...)
 }
 
-//GetFrom will execute the search, but instead of returning the results, will use the results to dig into other string primitives containing (hopefully) integers
-//the equivalent of using a Get argument in the sort
+//GetFrom will execute the search, but instead of returning the results, will use the results to dig into other string primitives containing (hopefully) integers.
+//It is the equivalent of using a GET argument in the sort
 func (this *Sorter) GetIntsFrom(pattern string) <-chan []*int {
 	return maybeIntsChannel(this.GetFrom(pattern))
-
 }
 
-//GetFrom will execute the search, but instead of returning the results, will use the results to dig into other string primitives containing (hopefully) floating point numbers
-//the equivalent of using a GET argument in the sort
+//GetFrom will execute the search, but instead of returning the results, will use the results to dig into other string primitives containing (hopefully) floating point numbers.
+//It is the equivalent of using a GET argument in the sort
 func (this *Sorter) GetFloatsFrom(pattern string) <-chan []*float64 {
 	return maybeFloatsChannel(this.GetFrom(pattern))
 }
 
-//StoreStrings will execute the sort, but instead of returning the results will store them in a list primitive
-//The Equivalent of using a STORE argument
+//StoreStrings will execute the sort, but instead of returning the results will store them in a list primitive.
+//It is the equivalent of using a STORE argument
 func (this *Sorter) StoreStrings(dest List) <-chan int {
 	this.storeIn(dest.key)
 	return IntCommand(this.key, this.key.args("sort", this.sortargs()...)...)
 }
 
-//StoreInts will execute the sort, but instead of returning the results will store them in a list primitive
-//The Equivalent of using a STORE argument
+//StoreInts will execute the sort, but instead of returning the results will store them in a list primitive.
+//It is the equivalent of using a STORE argument
 func (this *Sorter) StoreInts(dest IntList) <-chan int {
 	this.storeIn(dest.key)
 	return IntCommand(this.key, this.key.args("sort", this.sortargs()...)...)

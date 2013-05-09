@@ -22,42 +22,50 @@ func (this Integer) IsValid() <-chan bool {
 	return c
 }
 
-//Set sets the Integer to "val" - SET command
+//SET command - 
+//Set sets the Integer to "val"
 func (this Integer) Set(val int) <-chan nothing {
 	return NilCommand(this, this.args("set", itoa(val))...)
 }
 
-//SetIfEmpty sets the integer to "val", but only if it was empty before - SETNX command
+//SETNX command - 
+//SetIfEmpty sets the integer to "val", but only if it was empty before
 func (this Integer) SetIfEmpty(val int) <-chan bool {
 	return BoolCommand(this, this.args("setnx", itoa(val))...)
 }
 
-//Get returns the the value of this integer - GET command
+//GET command - 
+//Get returns the the value of this integer
 func (this Integer) Get() <-chan int {
 	return IntCommand(this, this.args("get")...)
 }
 
-//Gets the value of this integer before setting it to something else - GETSET command
+//GETSET command - 
+//Gets the value of this integer before setting it to something else
 func (this Integer) GetSet(val int) <-chan int {
 	return IntCommand(this, this.args("getset", itoa(val))...)
 }
 
-//Increment increases the value of this integer and returns the new value - INCR command
+//INCR command - 
+//Increment increases the value of this integer and returns the new value
 func (this Integer) Increment() <-chan int {
 	return IntCommand(this, this.args("incr")...)
 }
 
-//IncrementBy increases the value of this integer by "val", and returns the new value - INCRBY command
+//INCRBY command - 
+//IncrementBy increases the value of this integer by "val", and returns the new value
 func (this Integer) IncrementBy(val int) <-chan int {
 	return IntCommand(this, this.args("incrby", itoa(val))...)
 }
 
-//Decrement decrements this integer and returns the new value - DECR command
+//DECR command - 
+//Decrement decrements this integer and returns the new value
 func (this Integer) Decrement() <-chan int {
 	return IntCommand(this, this.args("decr")...)
 }
 
-//DecrementBy decreases this integer by "val", and returns the new value - DECRBY command
+//DECRBY command - 
+//DecrementBy decreases this integer by "val", and returns the new value
 func (this Integer) DecrementBy(val int) <-chan int {
 	return IntCommand(this, this.args("decrby", itoa(val))...)
 }

@@ -1,55 +1,72 @@
 package redis
 
 type Prefix interface {
-	//Key creates a basic key; you probably won't use this directly very often
+	//Key creates a basic key; you probably won't use this directly very often.
+	//This is a lightweight function - does *not* involve network I/O
 	Key(key string) Key
 
-	//String creates the definition for a basic Redis String primitive
+	//String creates the definition for a basic Redis String primitive.
+	//This is a lightweight function - does *not* involve network I/O
 	String(key string) String
 
-	//Integer creates the definition for a Redis String primitive that contains an integer
+	//Integer creates the definition for a Redis String primitive that contains an integer.
+	//This is a lightweight function - does *not* involve network I/O
 	Integer(key string) Integer
 
-	//Float creates the definition for a Redis String primitive that contains a floating point number
+	//Float creates the definition for a Redis String primitive that contains a floating point number.
+	//This is a lightweight function - does *not* involve network I/O
 	Float(key string) Float
 
-	//Bits creates the definition for a Redis String primitive that contains a bitfield
+	//Bits creates the definition for a Redis String primitive that contains a bitfield.
+	//This is a lightweight function - does *not* involve network I/O
 	Bits(key string) Bits
 
-	//Hash creates the definition for a basic Redis Hash primitive
+	//Hash creates the definition for a basic Redis Hash primitive.
+	//This is a lightweight function - does *not* involve network I/O
 	Hash(key string) Hash
 
-	//List creates the definition for a basic Redis List primitive
+	//List creates the definition for a basic Redis List primitive.
+	//This is a lightweight function - does *not* involve network I/O
 	List(key string) List
 
-	//IntList creates the definition for a Redis List primitive that contains only integers
+	//IntList creates the definition for a Redis List primitive that contains only integers.
+	//This is a lightweight function - does *not* involve network I/O
 	IntList(key string) IntList
 
-	//Set creates the definition for a basic Redis Set primitive
+	//Set creates the definition for a basic Redis Set primitive.
+	//This is a lightweight function - does *not* involve network I/O
 	Set(key string) Set
 
-	//IntSet creates the definition for a Redis Set primitive that contains only integers
+	//IntSet creates the definition for a Redis Set primitive that contains only integers.
+	//This is a lightweight function - does *not* involve network I/O
 	IntSet(key string) IntSet
 
-	//SortedSet creates the definition for a basic Redis ZSet primitive
+	//SortedSet creates the definition for a basic Redis ZSet primitive.
+	//This is a lightweight function - does *not* involve network I/O
 	SortedSet(key string) SortedSet
 
-	//SortedIntSet creates the definition for a Redis ZSet primitive that contains only integers
+	//SortedIntSet creates the definition for a Redis ZSet primitive that contains only integers.
+	//This is a lightweight function - does *not* involve network I/O
 	SortedIntSet(key string) SortedIntSet
 
-	//Mutex creates a Mutex within redis
+	//Mutex creates a Mutex within redis.
+	//Warning - this is *not* a lightweight function - there is some network I/O involved in mutex initialization
 	Mutex(key string) Mutex
 
-	//Semaphore creates a Semaphore within redis
+	//Semaphore creates a Semaphore within redis.
+	//Warning - this is *not* a lightweight function - there is some network I/O involved in mutex initialization
 	Semaphore(key string, count int) Mutex
 
-	//ReadWriteMutex creates a Read/Write Mutex within redis
+	//ReadWriteMutex creates a Read/Write Mutex within redis.
+	//Warning - this is *not* a lightweight function - there is some network I/O involved in mutex initialization
 	ReadWriteMutex(key string, readers int) *ReadWriteMutex
 
-	//Channel defines a pub/sub channel within redis
+	//Channel defines a pub/sub channel within redis.
+	//This is a lightweight function - does *not* involve network I/O
 	Channel(key string) Channel
 
-	//Prefix allows you to create a namespace for other redis primitives to help make sure there are no duplication conflicts
+	//Prefix allows you to create a namespace for other redis primitives to help make sure there are no duplication conflicts.
+	//This is a lightweight function - does *not* involve network I/O
 	Prefix(key string) Prefix
 }
 

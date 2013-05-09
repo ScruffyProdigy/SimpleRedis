@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-//A Connection is a single connection to a Redis Instance
+//A Connection is a single connection to a Redis Instance.
 //Each client typically has a pool of these to work with
 type Connection struct {
 	net.Conn
@@ -33,7 +33,7 @@ func (this Connection) output(command command) error {
 	return command.callback()(res)
 }
 
-//Error is how an error gets reported
+//Error is how an error gets reported.
 //Since The redis code operates in a separate goroutine, errors can't always be reported directly
 func (this Connection) Error(e error, c command) {
 	this.client.errCallback(e, strings.Join(c.arguments(), " "))

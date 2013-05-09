@@ -24,42 +24,50 @@ func (this IntSet) IsValid() <-chan bool {
 	return c
 }
 
-//Add adds an integer to the set - SADD command
+//SADD command - 
+//Add adds an integer to the set
 func (this IntSet) Add(item int) <-chan bool {
 	return BoolCommand(this, this.args("sadd", itoa(item))...)
 }
 
-//Remove removes an integer from the set - SREM command
+//SREM command -
+//Remove removes an integer from the set
 func (this IntSet) Remove(item int) <-chan bool {
 	return BoolCommand(this, this.args("srem", itoa(item))...)
 }
 
-//Members lists all of the integers in the set - SMEMBERS command
+//SMEMBERS command -
+//Members lists all of the integers in the set
 func (this IntSet) Members() <-chan []int {
 	return intsChannel(SliceCommand(this, this.args("smembers")...))
 }
 
-//IsMember returns whether or not an integer is part of the set - SISMEMBER command
+//SISMEMBER command -
+//IsMember returns whether or not an integer is part of the set
 func (this IntSet) IsMember(item int) <-chan bool {
 	return BoolCommand(this, this.args("sismember", itoa(item))...)
 }
 
-//Size returns the number of elements in the set - SCARD command
+//SCARD command -
+//Size returns the number of elements in the set
 func (this IntSet) Size() <-chan int {
 	return IntCommand(this, this.args("scard")...)
 }
 
-//RandomMember returns a random integer from the set - SRANDMEMBER command
+//SRANDMEMBER command -
+//RandomMember returns a random integer from the set
 func (this IntSet) RandomMember() <-chan int {
 	return IntCommand(this, this.args("srandmember")...)
 }
 
-//Pop removes a random integer from the set and returns it to you - SPOP command
+//SPOP command -
+//Pop removes a random integer from the set and returns it to you
 func (this IntSet) Pop() <-chan int {
 	return IntCommand(this, this.args("spop")...)
 }
 
-//Intersection returns a list of all integers that this and another set have in common - SINTER command
+//SINTER command -
+//Intersection returns a list of all integers that this and another set have in common
 func (this IntSet) Intersection(otherSets ...IntSet) <-chan []int {
 	args := this.args("sinter")
 	for _, set := range otherSets {
@@ -68,7 +76,8 @@ func (this IntSet) Intersection(otherSets ...IntSet) <-chan []int {
 	return intsChannel(SliceCommand(this, args...))
 }
 
-//Union returns a list of all integers that are either in this set or another - SUNION command
+//SUNION command -
+//Union returns a list of all integers that are either in this set or another
 func (this IntSet) Union(otherSets ...IntSet) <-chan []int {
 	args := this.args("sunion")
 	for _, set := range otherSets {
@@ -77,7 +86,8 @@ func (this IntSet) Union(otherSets ...IntSet) <-chan []int {
 	return intsChannel(SliceCommand(this, args...))
 }
 
-//Difference returns a list of all integers that are in this set, but not another - SDIFF command
+//SDIFF command -
+//Difference returns a list of all integers that are in this set, but not another
 func (this IntSet) Difference(otherSets ...IntSet) <-chan []int {
 	args := this.args("sdiff")
 	for _, set := range otherSets {
@@ -86,8 +96,9 @@ func (this IntSet) Difference(otherSets ...IntSet) <-chan []int {
 	return intsChannel(SliceCommand(this, args...))
 }
 
-//StoreIntersectionOf finds the intersection of multiple other sets and stores it in this one - SINTERSTORE
-//it returns the number of elements in the new set
+//SINTERSTORE command -
+//StoreIntersectionOf finds the intersection of multiple other sets and stores it in this one.
+//It returns the number of elements in the new set
 func (this IntSet) StoreIntersectionOf(sets ...IntSet) <-chan int {
 	args := this.args("sinterstore")
 	for _, set := range sets {
@@ -96,8 +107,9 @@ func (this IntSet) StoreIntersectionOf(sets ...IntSet) <-chan int {
 	return IntCommand(this, args...)
 }
 
-//StoreUnionOf finds the union of multiple other sets and stores it in this one - SUNIONSTORE
-//it returns the number of elements in the new set
+//SUNIONSTORE command -
+//StoreUnionOf finds the union of multiple other sets and stores it in this one.
+//It returns the number of elements in the new set
 func (this IntSet) StoreUnionOf(sets ...IntSet) <-chan int {
 	args := this.args("sunionstore")
 	for _, set := range sets {
@@ -106,8 +118,9 @@ func (this IntSet) StoreUnionOf(sets ...IntSet) <-chan int {
 	return IntCommand(this, args...)
 }
 
-//StoreDifferenceOf finds the difference between two other sets and stores it in this one - SDIFFSTORE
-//it returns the number of elements in the new set
+//SDIFFSTORE command -
+//StoreDifferenceOf finds the difference between two other sets and stores it in this one.
+//It returns the number of elements in the new set
 func (this IntSet) StoreDifferenceOf(sets ...IntSet) <-chan int {
 	args := this.args("sdiffstore")
 	for _, set := range sets {
@@ -116,8 +129,9 @@ func (this IntSet) StoreDifferenceOf(sets ...IntSet) <-chan int {
 	return IntCommand(this, args...)
 }
 
-//MoveMemberTo removes an integer from this set if it exists, and then adds it to another set - SMOVE
-//nothing happens if the integer was not a member of this set
+//SMOVE command -
+//MoveMemberTo removes an integer from this set if it exists, and then adds it to another set.
+//Nothing happens if the integer was not a member of this set
 func (this IntSet) MoveMemberTo(newSet IntSet, item int) <-chan bool {
 	return BoolCommand(this, this.args("smove", newSet.key, itoa(item))...)
 }

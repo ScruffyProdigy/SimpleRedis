@@ -1,0 +1,4931 @@
+<!--
+	Copyright 2009 The Go Authors. All rights reserved.
+	Use of this source code is governed by a BSD-style
+	license that can be found in the LICENSE file.
+-->
+
+	
+		<div id="short-nav">
+			<dl>
+			<dd><code>import "./redis"</code></dd>
+			</dl>
+			<dl>
+			<dd><a href="#overview" class="overviewLink">Overview</a></dd>
+			<dd><a href="#index">Index</a></dd>
+			
+			
+			</dl>
+		</div>
+		<!-- The package's Name is printed as title by the top-level template -->
+		<div id="overview" class="toggleVisible">
+			<div class="collapsed">
+				<h2 class="toggleButton" title="Click to show Overview section">Overview ▹</h2>
+			</div>
+			<div class="expanded">
+				<h2 class="toggleButton" title="Click to hide Overview section">Overview ▾</h2>
+				<p>
+SimpleRedis is an object-oriented Redis library for golang.
+</p>
+<h3 id="Object_Oriented">Object-Oriented</h3>
+<p>
+SimpleRedis prefers to use an Object-Oriented approach to using Redis
+In most libraries, You would use something along the lines of:
+</p>
+<pre>Redis.Set(&#34;Test_String&#34;,&#34;Hello World&#34;)
+str := Redis.Get(&#34;Test_String&#34;)
+</pre>
+<p>
+In SimpleRedis, instead of calling the functions directly, you use:
+</p>
+<pre>s := Redis.String(&#34;Test_String&#34;)
+&lt;-s.Set(&#34;Hello World&#34;)
+str := &lt;-s.Get()
+</pre>
+<p>
+This accomplishes a few things:
+</p>
+<p>
+a) By Default, the &#34;Test_String&#34; only gets defined in one place, so there are fewer chances for mistyping errors
+</p>
+<p>
+b) It becomes easier to look up which operations are usable for different types of data
+</p>
+<p>
+c) It more accurately models how one tends to think about the data, which is typically in terms of the Redis primitives rather than the functions
+</p>
+<p>
+If you do need to call the functions directly, You can call any of the &#34;Command&#34; functions in command.go
+</p>
+<h3 id="Concurrency">Concurrency</h3>
+<p>
+While Redis is blazing fast, it *still* has to use network I/O, often times there will be things you can do while that is happening
+</p>
+<pre>s.Get()
+</pre>
+<p>
+returns a channel, which, when Redis has returned information, will contain a string.
+If you want the data immediately, you should use
+</p>
+<pre>str := &lt;-s.Get()
+</pre>
+<p>
+The reasons for doing this are:
+</p>
+<p>
+a) Helps to remind you that you can do things while waiting for Redis
+</p>
+<p>
+b) Some operations (e.g. anything sent within a transaction) don&#39;t return immediately, and the result can only be obtained by waiting
+</p>
+<p>
+c) Gives a natural interface for dealing with situations when Redis won&#39;t return anything (e.g. Popping from an empty List - &#34;str,ok := &lt;-l.LeftPop()&#34;)
+</p>
+<p>
+d) Makes it easier to control when you pause for Redis
+</p>
+<h3 id="Usage">Usage</h3>
+<p>
+1) Figure out how you plan on connecting to Redis, and get a Config object set up properly
+</p>
+<p>
+2) Use the Config to create a Client object.  This Client object will likely end up global, and at the very minimum needs to be accesible by all of the object methods that define Redis Objects in the next step
+</p>
+<p>
+3) Create private methods for your objects that return Redis Objects
+</p>
+<pre>//we use a namespace to prevent any redis data from the user conflicting with any other namespace
+func (u *User) base() Redis.Prefix {
+    return global.Redis.Prefix(&#34;User:&#34;+u.id+&#34;:&#34;)
+}
+
+//define the user&#39;s friends by a redis set containing their IDs
+func (u *User) friends() Redis.IntSet {
+    return u.base().IntSet(&#34;Friends&#34;)
+}
+</pre>
+<p>
+4) Create public methods that interact with these objects
+</p>
+<pre>//note: not using the channel arrows, because this is not a time-sensitive operation
+func (u *User) AddFriend(otherUser *User) {
+	u.friends().Add(otherUser.id)
+	otherUser.friends().Add(u.id)
+}
+
+func (u *User) Unfriend(otherUser *User) {
+	u.friends().Remove(otherUser.id)
+	otherUser.friends().Remove(u.id)
+}
+</pre>
+
+			</div>
+		</div>
+		
+	
+		<h2 id="index">Index</h2>
+		<!-- Table of contents for API; must be named manual-nav to turn off auto nav. -->
+		<div id="manual-nav">
+			<dl>
+			
+			
+			
+				
+				<dd><a href="#BoolCommand">func BoolCommand(e Executor, args ...string) &lt;-chan bool</a></dd>
+			
+				
+				<dd><a href="#FloatCommand">func FloatCommand(e Executor, args ...string) &lt;-chan float64</a></dd>
+			
+				
+				<dd><a href="#IntCommand">func IntCommand(e Executor, args ...string) &lt;-chan int</a></dd>
+			
+				
+				<dd><a href="#MapCommand">func MapCommand(e Executor, args ...string) &lt;-chan map[string]string</a></dd>
+			
+				
+				<dd><a href="#MaybeSliceCommand">func MaybeSliceCommand(e Executor, args ...string) &lt;-chan []*string</a></dd>
+			
+				
+				<dd><a href="#NilCommand">func NilCommand(e Executor, args ...string) &lt;-chan nothing</a></dd>
+			
+				
+				<dd><a href="#SliceCommand">func SliceCommand(e Executor, args ...string) &lt;-chan []string</a></dd>
+			
+				
+				<dd><a href="#StringCommand">func StringCommand(e Executor, args ...string) &lt;-chan string</a></dd>
+			
+			
+				
+				<dd><a href="#Bits">type Bits</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Bits.Count">func (this Bits) Count(start, end int) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Bits.Get">func (this Bits) Get(index int) &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Bits.IsValid">func (this Bits) IsValid() &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Bits.Off">func (this Bits) Off(index int) &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Bits.On">func (this Bits) On(index int) &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Bits.SetTo">func (this Bits) SetTo(index int, on bool) &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Bits.StoreDifferencesOf">func (this Bits) StoreDifferencesOf(otherKeys ...Bits) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Bits.StoreIntersectionOf">func (this Bits) StoreIntersectionOf(otherKeys ...Bits) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Bits.StoreInverseOf">func (this Bits) StoreInverseOf(otherKey Bits) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Bits.StoreUnionOf">func (this Bits) StoreUnionOf(otherKeys ...Bits) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Bits.Use">func (this Bits) Use(e SafeExecutor) Bits</a></dd>
+				
+			
+				
+				<dd><a href="#Channel">type Channel</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Channel.BlockingPatternSubscription">func (this Channel) BlockingPatternSubscription(subscription func(&lt;-chan string))</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Channel.BlockingSubscription">func (this Channel) BlockingSubscription(subscription func(&lt;-chan string))</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Channel.PatternSubscribe">func (this Channel) PatternSubscribe(action func(string)) (startSignal &lt;-chan nothing, finishSignaler io.Closer)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Channel.Publish">func (this Channel) Publish(message string) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Channel.Subscribe">func (this Channel) Subscribe(action func(string)) (startSignal &lt;-chan nothing, finishSignaler io.Closer)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Channel.Use">func (this Channel) Use(e SafeExecutor) Channel</a></dd>
+				
+			
+				
+				<dd><a href="#Client">type Client</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Load">func Load(configfile io.Reader) (*Client, error)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#New">func New(config Config) (r *Client, e error)</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Client.Bits">func (this *Client) Bits(key string) Bits</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Client.Channel">func (this *Client) Channel(key string) Channel</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Client.Close">func (this *Client) Close() error</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Client.Execute">func (this Client) Execute(command command)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Client.Float">func (this *Client) Float(key string) Float</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Client.Hash">func (this *Client) Hash(key string) Hash</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Client.IntList">func (this *Client) IntList(key string) IntList</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Client.IntSet">func (this *Client) IntSet(key string) IntSet</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Client.Integer">func (this *Client) Integer(key string) Integer</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Client.Key">func (this *Client) Key(key string) Key</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Client.List">func (this *Client) List(key string) List</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Client.Mutex">func (this *Client) Mutex(key string) Mutex</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Client.Pipeline">func (this Client) Pipeline(callback func(SafeExecutor))</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Client.Prefix">func (this *Client) Prefix(key string) Prefix</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Client.ReadWriteMutex">func (this *Client) ReadWriteMutex(key string, readers int) *ReadWriteMutex</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Client.Semaphore">func (this *Client) Semaphore(key string, count int) Mutex</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Client.Set">func (this *Client) Set(key string) Set</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Client.SetErrorCallback">func (this *Client) SetErrorCallback(callback func(error, string))</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Client.SortedIntSet">func (this *Client) SortedIntSet(key string) SortedIntSet</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Client.SortedSet">func (this *Client) SortedSet(key string) SortedSet</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Client.String">func (this *Client) String(key string) String</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Client.Transaction">func (this Client) Transaction(callback func(SafeExecutor))</a></dd>
+				
+			
+				
+				<dd><a href="#Config">type Config</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#DefaultConfiguration">func DefaultConfiguration() Config</a></dd>
+				
+				
+			
+				
+				<dd><a href="#Connection">type Connection</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Connection.Error">func (this Connection) Error(e error, c command)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Connection.Execute">func (this Connection) Execute(command command)</a></dd>
+				
+			
+				
+				<dd><a href="#Executor">type Executor</a></dd>
+				
+				
+			
+				
+				<dd><a href="#Float">type Float</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Float.DecrementBy">func (this Float) DecrementBy(val float64) &lt;-chan float64</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Float.Get">func (this Float) Get() &lt;-chan float64</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Float.GetSet">func (this Float) GetSet(val float64) &lt;-chan float64</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Float.IncrementBy">func (this Float) IncrementBy(val float64) &lt;-chan float64</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Float.IsValid">func (this Float) IsValid() &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Float.Set">func (this Float) Set(val float64) &lt;-chan nothing</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Float.SetIfEmpty">func (this Float) SetIfEmpty(val float64) &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Float.Use">func (this Float) Use(e SafeExecutor) Float</a></dd>
+				
+			
+				
+				<dd><a href="#Hash">type Hash</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Hash.Float">func (this Hash) Float(key string) HashFloat</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Hash.Get">func (this Hash) Get() &lt;-chan map[string]string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Hash.Integer">func (this Hash) Integer(key string) HashInteger</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Hash.IsValid">func (this Hash) IsValid() &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Hash.Size">func (this Hash) Size() &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Hash.String">func (this Hash) String(key string) HashString</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Hash.Use">func (this Hash) Use(e SafeExecutor) Hash</a></dd>
+				
+			
+				
+				<dd><a href="#HashField">type HashField</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#HashField.Delete">func (this HashField) Delete() &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#HashField.Exists">func (this HashField) Exists() &lt;-chan bool</a></dd>
+				
+			
+				
+				<dd><a href="#HashFloat">type HashFloat</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#HashFloat.DecrementBy">func (this HashFloat) DecrementBy(val float64) &lt;-chan float64</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#HashFloat.Get">func (this HashFloat) Get() &lt;-chan float64</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#HashFloat.IncrementBy">func (this HashFloat) IncrementBy(val float64) &lt;-chan float64</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#HashFloat.Set">func (this HashFloat) Set(val float64) &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#HashFloat.SetIfEmpty">func (this HashFloat) SetIfEmpty(val float64) &lt;-chan bool</a></dd>
+				
+			
+				
+				<dd><a href="#HashInteger">type HashInteger</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#HashInteger.DecrementBy">func (this HashInteger) DecrementBy(val int) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#HashInteger.Get">func (this HashInteger) Get() &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#HashInteger.IncrementBy">func (this HashInteger) IncrementBy(val int) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#HashInteger.Set">func (this HashInteger) Set(val int) &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#HashInteger.SetIfEmpty">func (this HashInteger) SetIfEmpty(val int) &lt;-chan bool</a></dd>
+				
+			
+				
+				<dd><a href="#HashString">type HashString</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#HashString.Get">func (this HashString) Get() &lt;-chan string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#HashString.Set">func (this HashString) Set(val string) &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#HashString.SetIfEmpty">func (this HashString) SetIfEmpty(val string) &lt;-chan bool</a></dd>
+				
+			
+				
+				<dd><a href="#IntList">type IntList</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntList.BlockUntilLeftPop">func (this IntList) BlockUntilLeftPop() &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntList.BlockUntilLeftPopWithTimeout">func (this IntList) BlockUntilLeftPopWithTimeout(timeout int) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntList.BlockUntilMoveLastItemToList">func (this IntList) BlockUntilMoveLastItemToList(newList IntList) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntList.BlockUntilMoveLastItemToListWithTimeout">func (this IntList) BlockUntilMoveLastItemToListWithTimeout(newList IntList, timeout int) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntList.BlockUntilRightPop">func (this IntList) BlockUntilRightPop() &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntList.BlockUntilRightPopWithTimeout">func (this IntList) BlockUntilRightPopWithTimeout(timeout int) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntList.GetFromRange">func (this IntList) GetFromRange(left, right int) &lt;-chan []int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntList.Index">func (this IntList) Index(index int) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntList.InsertAfter">func (this IntList) InsertAfter(pivot, item int) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntList.InsertBefore">func (this IntList) InsertBefore(pivot, item int) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntList.IsValid">func (this IntList) IsValid() &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntList.LeftPop">func (this IntList) LeftPop() &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntList.LeftPush">func (this IntList) LeftPush(items ...int) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntList.LeftPushIfExists">func (this IntList) LeftPushIfExists(item int) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntList.Length">func (this IntList) Length() &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntList.MoveLastItemToList">func (this IntList) MoveLastItemToList(newList IntList) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntList.Remove">func (this IntList) Remove(items ...int) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntList.RemoveNFromLeft">func (this IntList) RemoveNFromLeft(n int, item int) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntList.RemoveNFromRight">func (this IntList) RemoveNFromRight(n int, item int) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntList.RightPop">func (this IntList) RightPop() &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntList.RightPush">func (this IntList) RightPush(items ...int) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntList.RightPushIfExists">func (this IntList) RightPushIfExists(item int) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntList.Set">func (this IntList) Set(index int, item int) &lt;-chan nothing</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntList.TrimToRange">func (this IntList) TrimToRange(left, right int) &lt;-chan nothing</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntList.Use">func (this IntList) Use(e SafeExecutor) IntList</a></dd>
+				
+			
+				
+				<dd><a href="#IntSet">type IntSet</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntSet.Add">func (this IntSet) Add(item int) &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntSet.Difference">func (this IntSet) Difference(otherSets ...IntSet) &lt;-chan []int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntSet.Intersection">func (this IntSet) Intersection(otherSets ...IntSet) &lt;-chan []int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntSet.IsMember">func (this IntSet) IsMember(item int) &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntSet.IsValid">func (this IntSet) IsValid() &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntSet.Members">func (this IntSet) Members() &lt;-chan []int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntSet.MoveMemberTo">func (this IntSet) MoveMemberTo(newSet IntSet, item int) &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntSet.Pop">func (this IntSet) Pop() &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntSet.RandomMember">func (this IntSet) RandomMember() &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntSet.Remove">func (this IntSet) Remove(item int) &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntSet.Size">func (this IntSet) Size() &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntSet.StoreDifferenceOf">func (this IntSet) StoreDifferenceOf(sets ...IntSet) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntSet.StoreIntersectionOf">func (this IntSet) StoreIntersectionOf(sets ...IntSet) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntSet.StoreUnionOf">func (this IntSet) StoreUnionOf(sets ...IntSet) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntSet.Union">func (this IntSet) Union(otherSets ...IntSet) &lt;-chan []int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#IntSet.Use">func (this IntSet) Use(e SafeExecutor) IntSet</a></dd>
+				
+			
+				
+				<dd><a href="#Integer">type Integer</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Integer.Decrement">func (this Integer) Decrement() &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Integer.DecrementBy">func (this Integer) DecrementBy(val int) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Integer.Get">func (this Integer) Get() &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Integer.GetSet">func (this Integer) GetSet(val int) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Integer.Increment">func (this Integer) Increment() &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Integer.IncrementBy">func (this Integer) IncrementBy(val int) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Integer.IsValid">func (this Integer) IsValid() &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Integer.Set">func (this Integer) Set(val int) &lt;-chan nothing</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Integer.SetIfEmpty">func (this Integer) SetIfEmpty(val int) &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Integer.Use">func (this Integer) Use(e SafeExecutor) Integer</a></dd>
+				
+			
+				
+				<dd><a href="#Key">type Key</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Key.Delete">func (this Key) Delete() &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Key.Execute">func (this Key) Execute(command command)</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Key.Exists">func (this Key) Exists() &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Key.ExpireAt">func (this Key) ExpireAt(timestamp time.Time) &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Key.ExpireIn">func (this Key) ExpireIn(duration time.Duration) &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Key.MillisecondsToLive">func (this Key) MillisecondsToLive() &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Key.MoveTo">func (this Key) MoveTo(other Key) &lt;-chan nothing</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Key.MoveToIfEmpty">func (this Key) MoveToIfEmpty(other Key) &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Key.SecondsToLive">func (this Key) SecondsToLive() &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Key.Type">func (this Key) Type() &lt;-chan string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Key.Use">func (this Key) Use(e SafeExecutor) Key</a></dd>
+				
+			
+				
+				<dd><a href="#List">type List</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#List.BlockUntilLeftPop">func (this List) BlockUntilLeftPop() &lt;-chan string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#List.BlockUntilLeftPopWithTimeout">func (this List) BlockUntilLeftPopWithTimeout(timeout int) &lt;-chan string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#List.BlockUntilMoveLastItemToList">func (this List) BlockUntilMoveLastItemToList(newList List) &lt;-chan string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#List.BlockUntilMoveLastItemToListWithTimeout">func (this List) BlockUntilMoveLastItemToListWithTimeout(newList List, timeout int) &lt;-chan string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#List.BlockUntilRightPop">func (this List) BlockUntilRightPop() &lt;-chan string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#List.BlockUntilRightPopWithTimeout">func (this List) BlockUntilRightPopWithTimeout(timeout int) &lt;-chan string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#List.GetFromRange">func (this List) GetFromRange(left, right int) &lt;-chan []string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#List.Index">func (this List) Index(index int) &lt;-chan string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#List.InsertAfter">func (this List) InsertAfter(pivot, item string) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#List.InsertBefore">func (this List) InsertBefore(pivot, item string) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#List.IsValid">func (this List) IsValid() &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#List.LeftPop">func (this List) LeftPop() &lt;-chan string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#List.LeftPush">func (this List) LeftPush(items ...string) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#List.LeftPushIfExists">func (this List) LeftPushIfExists(item string) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#List.Length">func (this List) Length() &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#List.MoveLastItemToList">func (this List) MoveLastItemToList(newList List) &lt;-chan string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#List.Remove">func (this List) Remove(items ...string) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#List.RemoveNFromLeft">func (this List) RemoveNFromLeft(n int, item string) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#List.RemoveNFromRight">func (this List) RemoveNFromRight(n int, item string) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#List.RightPop">func (this List) RightPop() &lt;-chan string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#List.RightPush">func (this List) RightPush(items ...string) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#List.RightPushIfExists">func (this List) RightPushIfExists(item string) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#List.Set">func (this List) Set(index int, item string) &lt;-chan nothing</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#List.TrimToRange">func (this List) TrimToRange(left, right int) &lt;-chan nothing</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#List.Use">func (this List) Use(e SafeExecutor) List</a></dd>
+				
+			
+				
+				<dd><a href="#Mutex">type Mutex</a></dd>
+				
+				
+			
+				
+				<dd><a href="#Prefix">type Prefix</a></dd>
+				
+				
+			
+				
+				<dd><a href="#ReadWriteMutex">type ReadWriteMutex</a></dd>
+				
+				
+			
+				
+				<dd><a href="#SafeExecutor">type SafeExecutor</a></dd>
+				
+				
+			
+				
+				<dd><a href="#Set">type Set</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Set.Add">func (this Set) Add(item string) &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Set.Difference">func (this Set) Difference(otherSets ...Set) &lt;-chan []string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Set.Intersection">func (this Set) Intersection(otherSets ...Set) &lt;-chan []string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Set.IsMember">func (this Set) IsMember(item string) &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Set.IsValid">func (this Set) IsValid() &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Set.Members">func (this Set) Members() &lt;-chan []string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Set.MoveMemberTo">func (this Set) MoveMemberTo(newSet Set, item string) &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Set.Pop">func (this Set) Pop() &lt;-chan string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Set.RandomMember">func (this Set) RandomMember() &lt;-chan string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Set.Remove">func (this Set) Remove(item string) &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Set.Size">func (this Set) Size() &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Set.StoreDifferenceOf">func (this Set) StoreDifferenceOf(sets ...Set) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Set.StoreIntersectionOf">func (this Set) StoreIntersectionOf(sets ...Set) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Set.StoreUnionOf">func (this Set) StoreUnionOf(sets ...Set) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Set.Union">func (this Set) Union(otherSets ...Set) &lt;-chan []string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Set.Use">func (this Set) Use(e SafeExecutor) Set</a></dd>
+				
+			
+				
+				<dd><a href="#SortableKey">type SortableKey</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortableKey.SortAlphabetically">func (this SortableKey) SortAlphabetically() *Sorter</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortableKey.SortNumerically">func (this SortableKey) SortNumerically() *Sorter</a></dd>
+				
+			
+				
+				<dd><a href="#SortedIntSet">type SortedIntSet</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedIntSet.Add">func (this SortedIntSet) Add(item int, score float64) &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedIntSet.IncrementBy">func (this SortedIntSet) IncrementBy(item int, score float64) &lt;-chan float64</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedIntSet.IndexOf">func (this SortedIntSet) IndexOf(item int) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedIntSet.IndexedBetween">func (this SortedIntSet) IndexedBetween(start, stop int) &lt;-chan []int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedIntSet.IndexedBetweenWithScores">func (this SortedIntSet) IndexedBetweenWithScores(start, stop int) &lt;-chan map[int]float64</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedIntSet.IsValid">func (this SortedIntSet) IsValid() &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedIntSet.Remove">func (this SortedIntSet) Remove(item int) &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedIntSet.RemoveIndexedBetween">func (this SortedIntSet) RemoveIndexedBetween(start, stop int) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedIntSet.ReverseIndexOf">func (this SortedIntSet) ReverseIndexOf(item int) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedIntSet.ReverseIndexedBetween">func (this SortedIntSet) ReverseIndexedBetween(start, stop int) &lt;-chan []int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedIntSet.ReverseIndexedBetweenWithScores">func (this SortedIntSet) ReverseIndexedBetweenWithScores(start, stop int) &lt;-chan map[int]float64</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedIntSet.ScoreOf">func (this SortedIntSet) ScoreOf(item int) &lt;-chan float64</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedIntSet.Scores">func (this SortedIntSet) Scores() *SortedIntSetRange</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedIntSet.Size">func (this SortedIntSet) Size() &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedIntSet.StoreIntersection">func (this SortedIntSet) StoreIntersection() *SortedIntSetCombo</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedIntSet.StoreUnion">func (this SortedIntSet) StoreUnion() *SortedIntSetCombo</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedIntSet.Use">func (this SortedIntSet) Use(e SafeExecutor) SortedIntSet</a></dd>
+				
+			
+				
+				<dd><a href="#SortedIntSetCombo">type SortedIntSetCombo</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedIntSetCombo.OfSet">func (this *SortedIntSetCombo) OfSet(otherSet SortedIntSet) *SortedIntSetCombo</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedIntSetCombo.OfWeightedSet">func (this *SortedIntSetCombo) OfWeightedSet(otherSet SortedIntSet, weight float64) *SortedIntSetCombo</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedIntSetCombo.UseCombinedScores">func (this *SortedIntSetCombo) UseCombinedScores() &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedIntSetCombo.UseHigherScore">func (this *SortedIntSetCombo) UseHigherScore() &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedIntSetCombo.UseLowerScore">func (this *SortedIntSetCombo) UseLowerScore() &lt;-chan int</a></dd>
+				
+			
+				
+				<dd><a href="#SortedIntSetRange">type SortedIntSetRange</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedIntSetRange.Above">func (this *SortedIntSetRange) Above(min float64) *SortedIntSetRange</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedIntSetRange.AboveOrEqualTo">func (this *SortedIntSetRange) AboveOrEqualTo(min float64) *SortedIntSetRange</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedIntSetRange.Below">func (this *SortedIntSetRange) Below(max float64) *SortedIntSetRange</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedIntSetRange.BelowOrEqualTo">func (this *SortedIntSetRange) BelowOrEqualTo(max float64) *SortedIntSetRange</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedIntSetRange.Count">func (this *SortedIntSetRange) Count() &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedIntSetRange.Get">func (this *SortedIntSetRange) Get() &lt;-chan []int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedIntSetRange.GetWithScores">func (this *SortedIntSetRange) GetWithScores() &lt;-chan map[int]float64</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedIntSetRange.Limit">func (this *SortedIntSetRange) Limit(offset, count int) *SortedIntSetRange</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedIntSetRange.Remove">func (this *SortedIntSetRange) Remove() &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedIntSetRange.Reversed">func (this *SortedIntSetRange) Reversed() *SortedIntSetRange</a></dd>
+				
+			
+				
+				<dd><a href="#SortedSet">type SortedSet</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedSet.Add">func (this SortedSet) Add(item string, score float64) &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedSet.IncrementBy">func (this SortedSet) IncrementBy(item string, score float64) &lt;-chan float64</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedSet.IndexOf">func (this SortedSet) IndexOf(item string) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedSet.IndexedBetween">func (this SortedSet) IndexedBetween(start, stop int) &lt;-chan []string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedSet.IndexedBetweenWithScores">func (this SortedSet) IndexedBetweenWithScores(start, stop int) &lt;-chan map[string]float64</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedSet.IsValid">func (this SortedSet) IsValid() &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedSet.Remove">func (this SortedSet) Remove(item string) &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedSet.RemoveIndexedBetween">func (this SortedSet) RemoveIndexedBetween(start, stop int) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedSet.ReverseIndexOf">func (this SortedSet) ReverseIndexOf(item string) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedSet.ReverseIndexedBetween">func (this SortedSet) ReverseIndexedBetween(start, stop int) &lt;-chan []string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedSet.ReverseIndexedBetweenWithScores">func (this SortedSet) ReverseIndexedBetweenWithScores(start, stop int) &lt;-chan map[string]float64</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedSet.ScoreOf">func (this SortedSet) ScoreOf(item string) &lt;-chan float64</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedSet.Scores">func (this SortedSet) Scores() *SortedSetRange</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedSet.Size">func (this SortedSet) Size() &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedSet.StoreIntersection">func (this SortedSet) StoreIntersection() *SortedSetCombo</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedSet.StoreUnion">func (this SortedSet) StoreUnion() *SortedSetCombo</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedSet.Use">func (this SortedSet) Use(e SafeExecutor) SortedSet</a></dd>
+				
+			
+				
+				<dd><a href="#SortedSetCombo">type SortedSetCombo</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedSetCombo.OfSet">func (this *SortedSetCombo) OfSet(otherSet SortedSet) *SortedSetCombo</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedSetCombo.OfWeightedSet">func (this *SortedSetCombo) OfWeightedSet(otherSet SortedSet, weight float64) *SortedSetCombo</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedSetCombo.UseCombinedScores">func (this *SortedSetCombo) UseCombinedScores() &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedSetCombo.UseHigherScore">func (this *SortedSetCombo) UseHigherScore() &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedSetCombo.UseLowerScore">func (this *SortedSetCombo) UseLowerScore() &lt;-chan int</a></dd>
+				
+			
+				
+				<dd><a href="#SortedSetRange">type SortedSetRange</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedSetRange.Above">func (this *SortedSetRange) Above(min float64) *SortedSetRange</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedSetRange.AboveOrEqualTo">func (this *SortedSetRange) AboveOrEqualTo(min float64) *SortedSetRange</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedSetRange.Below">func (this *SortedSetRange) Below(max float64) *SortedSetRange</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedSetRange.BelowOrEqualTo">func (this *SortedSetRange) BelowOrEqualTo(max float64) *SortedSetRange</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedSetRange.Count">func (this *SortedSetRange) Count() &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedSetRange.Get">func (this *SortedSetRange) Get() &lt;-chan []string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedSetRange.GetWithScores">func (this *SortedSetRange) GetWithScores() &lt;-chan map[string]float64</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedSetRange.Limit">func (this *SortedSetRange) Limit(offset, count int) *SortedSetRange</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedSetRange.Remove">func (this *SortedSetRange) Remove() &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#SortedSetRange.Reversed">func (this *SortedSetRange) Reversed() *SortedSetRange</a></dd>
+				
+			
+				
+				<dd><a href="#Sorter">type Sorter</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Sorter.By">func (this *Sorter) By(pattern string) *Sorter</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Sorter.Get">func (this *Sorter) Get() &lt;-chan []string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Sorter.GetFloats">func (this *Sorter) GetFloats() &lt;-chan []float64</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Sorter.GetFloatsFrom">func (this *Sorter) GetFloatsFrom(pattern string) &lt;-chan []*float64</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Sorter.GetFrom">func (this *Sorter) GetFrom(pattern string) &lt;-chan []*string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Sorter.GetFromAndStoreIn">func (this *Sorter) GetFromAndStoreIn(pattern string, dest List) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Sorter.GetInts">func (this *Sorter) GetInts() &lt;-chan []int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Sorter.GetIntsFrom">func (this *Sorter) GetIntsFrom(pattern string) &lt;-chan []*int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Sorter.GetIntsFromAndStoreIn">func (this *Sorter) GetIntsFromAndStoreIn(pattern string, dest IntList) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Sorter.Limit">func (this *Sorter) Limit(offset, count int) *Sorter</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Sorter.Reverse">func (this *Sorter) Reverse() *Sorter</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Sorter.StoreInts">func (this *Sorter) StoreInts(dest IntList) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#Sorter.StoreStrings">func (this *Sorter) StoreStrings(dest List) &lt;-chan int</a></dd>
+				
+			
+				
+				<dd><a href="#String">type String</a></dd>
+				
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#String.Append">func (this String) Append(val string) &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#String.Get">func (this String) Get() &lt;-chan string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#String.IsValid">func (this String) IsValid() &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#String.Length">func (this String) Length() &lt;-chan int</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#String.Replace">func (this String) Replace(val string) &lt;-chan string</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#String.Set">func (this String) Set(val string) &lt;-chan nothing</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#String.SetIfEmpty">func (this String) SetIfEmpty(val string) &lt;-chan bool</a></dd>
+				
+					
+					<dd>&nbsp; &nbsp; <a href="#String.Use">func (this String) Use(e SafeExecutor) String</a></dd>
+				
+			
+			
+		</dl>
+
+		
+
+		
+			<h4>Package files</h4>
+			<p>
+			<span style="font-size:90%">
+			
+				<a href="/target/bits.go">bits.go</a>
+			
+				<a href="/target/channel.go">channel.go</a>
+			
+				<a href="/target/command.go">command.go</a>
+			
+				<a href="/target/connection.go">connection.go</a>
+			
+				<a href="/target/conversions.go">conversions.go</a>
+			
+				<a href="/target/doc.go">doc.go</a>
+			
+				<a href="/target/float.go">float.go</a>
+			
+				<a href="/target/hash.go">hash.go</a>
+			
+				<a href="/target/integer.go">integer.go</a>
+			
+				<a href="/target/intlist.go">intlist.go</a>
+			
+				<a href="/target/intset.go">intset.go</a>
+			
+				<a href="/target/key.go">key.go</a>
+			
+				<a href="/target/list.go">list.go</a>
+			
+				<a href="/target/mutex.go">mutex.go</a>
+			
+				<a href="/target/prefix.go">prefix.go</a>
+			
+				<a href="/target/read write mutex.go">read write mutex.go</a>
+			
+				<a href="/target/redis.go">redis.go</a>
+			
+				<a href="/target/set.go">set.go</a>
+			
+				<a href="/target/sort.go">sort.go</a>
+			
+				<a href="/target/sorted intset.go">sorted intset.go</a>
+			
+				<a href="/target/sorted set.go">sorted set.go</a>
+			
+				<a href="/target/string.go">string.go</a>
+			
+				<a href="/target/transaction.go">transaction.go</a>
+			
+			</span>
+			</p>
+		
+	
+		
+		
+		
+			
+			
+			<h2 id="BoolCommand">func <a href="/target/command.go?s=4138:4194#L198">BoolCommand</a></h2>
+			<pre>func BoolCommand(e Executor, args ...string) &lt;-chan bool</pre>
+			<p>
+BoolCommand executes the command specified by the arguments specified.
+It returns the response Redis generates coerced into a boolean value
+</p>
+
+			
+		
+			
+			
+			<h2 id="FloatCommand">func <a href="/target/command.go?s=5529:5589#L267">FloatCommand</a></h2>
+			<pre>func FloatCommand(e Executor, args ...string) &lt;-chan float64</pre>
+			<p>
+FloatCommand executes the command specified by the arguments specified.
+It returns the response Redis generates coerced into a float value
+</p>
+
+			
+		
+			
+			
+			<h2 id="IntCommand">func <a href="/target/command.go?s=4811:4865#L231">IntCommand</a></h2>
+			<pre>func IntCommand(e Executor, args ...string) &lt;-chan int</pre>
+			<p>
+IntCommand executes the command specified by the arguments specified.
+It returns the response Redis generates coerced into an integer value
+</p>
+
+			
+		
+			
+			
+			<h2 id="MapCommand">func <a href="/target/command.go?s=9056:9124#L421">MapCommand</a></h2>
+			<pre>func MapCommand(e Executor, args ...string) &lt;-chan map[string]string</pre>
+			<p>
+BoolCommand executes the command specified by the arguments specified.
+It returns the response Redis generates coerced into a map
+</p>
+
+			
+		
+			
+			
+			<h2 id="MaybeSliceCommand">func <a href="/target/command.go?s=8145:8212#L380">MaybeSliceCommand</a></h2>
+			<pre>func MaybeSliceCommand(e Executor, args ...string) &lt;-chan []*string</pre>
+			<p>
+MaybeSliceCommand executes the command specified by the arguments specified.
+It returns the response Redis generates coerced into a slice of pointers
+</p>
+
+			
+		
+			
+			
+			<h2 id="NilCommand">func <a href="/target/command.go?s=9966:10024#L463">NilCommand</a></h2>
+			<pre>func NilCommand(e Executor, args ...string) &lt;-chan nothing</pre>
+			<p>
+NilCommand executes the command specified by the arguments specified.
+It does not return a usable value
+</p>
+
+			
+		
+			
+			
+			<h2 id="SliceCommand">func <a href="/target/command.go?s=6953:7014#L336">SliceCommand</a></h2>
+			<pre>func SliceCommand(e Executor, args ...string) &lt;-chan []string</pre>
+			<p>
+SliceCommand executes the command specified by the arguments specified.
+It returns the response Redis generates coerced into a slice/array
+</p>
+
+			
+		
+			
+			
+			<h2 id="StringCommand">func <a href="/target/command.go?s=6263:6323#L303">StringCommand</a></h2>
+			<pre>func StringCommand(e Executor, args ...string) &lt;-chan string</pre>
+			<p>
+StringCommand executes the command specified by the arguments specified.
+It returns the response Redis generates coerced into a string value
+</p>
+
+			
+		
+		
+			
+			
+			<h2 id="Bits">type <a href="/target/bits.go?s=207:232#L1">Bits</a></h2>
+			<pre>type Bits struct {
+    Key
+}</pre>
+			<p>
+Bits is an object that acts as a Redis string primitive encapsulating the functions that operate on a set of bits
+See <a href="http://redis.io/commands#string">http://redis.io/commands#string</a> for more information on Redis Strings
+</p>
+
+
+			
+
+			
+
+			
+
+			
+
+			
+				
+				<h3 id="Bits.Count">func (Bits) <a href="/target/bits.go?s=1388:1437#L44">Count</a></h3>
+				<pre>func (this Bits) Count(start, end int) &lt;-chan int</pre>
+				<p>
+BITCOUNT command -
+Count returns the number of bits that are set
+</p>
+
+				
+				
+			
+				
+				<h3 id="Bits.Get">func (Bits) <a href="/target/bits.go?s=1206:1249#L38">Get</a></h3>
+				<pre>func (this Bits) Get(index int) &lt;-chan bool</pre>
+				<p>
+GETBIT command -
+Get returns whether a specific bit in the field is set
+</p>
+
+				
+				
+			
+				
+				<h3 id="Bits.IsValid">func (Bits) <a href="/target/bits.go?s=420:458#L6">IsValid</a></h3>
+				<pre>func (this Bits) IsValid() &lt;-chan bool</pre>
+				<p>
+IsValid returns whether the underlying redis object can use the commands in this object
+</p>
+
+				
+				
+			
+				
+				<h3 id="Bits.Off">func (Bits) <a href="/target/bits.go?s=1012:1055#L32">Off</a></h3>
+				<pre>func (this Bits) Off(index int) &lt;-chan bool</pre>
+				<p>
+SETBIT command -
+Off turns off a specific bit in the field
+</p>
+
+				
+				
+			
+				
+				<h3 id="Bits.On">func (Bits) <a href="/target/bits.go?s=832:874#L26">On</a></h3>
+				<pre>func (this Bits) On(index int) &lt;-chan bool</pre>
+				<p>
+SETBIT command -
+On turns on a specific bit in the field
+</p>
+
+				
+				
+			
+				
+				<h3 id="Bits.SetTo">func (Bits) <a href="/target/bits.go?s=650:704#L17">SetTo</a></h3>
+				<pre>func (this Bits) SetTo(index int, on bool) &lt;-chan bool</pre>
+				<p>
+SETBIT command -
+SetTo Sets a specific bit in the field to a specific value
+</p>
+
+				
+				
+			
+				
+				<h3 id="Bits.StoreDifferencesOf">func (Bits) <a href="/target/bits.go?s=2286:2351#L70">StoreDifferencesOf</a></h3>
+				<pre>func (this Bits) StoreDifferencesOf(otherKeys ...Bits) &lt;-chan int</pre>
+				<p>
+BITOP XOR command -
+StoreDifferenceOf stores the result of a logical xor operation of other bitfields in this bitfield
+</p>
+
+				
+				
+			
+				
+				<h3 id="Bits.StoreIntersectionOf">func (Bits) <a href="/target/bits.go?s=1619:1685#L50">StoreIntersectionOf</a></h3>
+				<pre>func (this Bits) StoreIntersectionOf(otherKeys ...Bits) &lt;-chan int</pre>
+				<p>
+BITOP AND command -
+StoreIntersetionOf stores the result of a logical and operation of other bitfields in this bitfield
+</p>
+
+				
+				
+			
+				
+				<h3 id="Bits.StoreInverseOf">func (Bits) <a href="/target/bits.go?s=2624:2681#L80">StoreInverseOf</a></h3>
+				<pre>func (this Bits) StoreInverseOf(otherKey Bits) &lt;-chan int</pre>
+				<p>
+BITOP NOT command -
+StoreInverseOf stores the result of a logical not operation of another bitfield in this bitfield
+</p>
+
+				
+				
+			
+				
+				<h3 id="Bits.StoreUnionOf">func (Bits) <a href="/target/bits.go?s=1953:2012#L60">StoreUnionOf</a></h3>
+				<pre>func (this Bits) StoreUnionOf(otherKeys ...Bits) &lt;-chan int</pre>
+				<p>
+BITOP OR command -
+StoreUnionOf stores the result of a logical or operation of other bitfields in this bitfield
+</p>
+
+				
+				
+			
+				
+				<h3 id="Bits.Use">func (Bits) <a href="/target/bits.go?s=2809:2850#L85">Use</a></h3>
+				<pre>func (this Bits) Use(e SafeExecutor) Bits</pre>
+				<p>
+Use allows you to use this key on a different executor
+</p>
+
+				
+				
+			
+		
+			
+			
+			<h2 id="Channel">type <a href="/target/channel.go?s=220:264#L4">Channel</a></h2>
+			<pre>type Channel struct {
+    Key
+    <span class="comment">// contains filtered or unexported fields</span>
+}</pre>
+			<p>
+A Channel is object that encapsulates the Pub/Sub redis commands.
+See <a href="http://redis.io/topics/pubsub">http://redis.io/topics/pubsub</a> for more information on redis Pub/Sub
+</p>
+
+
+			
+
+			
+
+			
+
+			
+
+			
+				
+				<h3 id="Channel.BlockingPatternSubscription">func (Channel) <a href="/target/channel.go?s=3476:3557#L111">BlockingPatternSubscription</a></h3>
+				<pre>func (this Channel) BlockingPatternSubscription(subscription func(&lt;-chan string))</pre>
+				<p>
+BlockingPatternSubscription sends a message through a go channel whenever a message is published on any redis channel that fits the pattern.
+When the function terminates, the subscription is canceled
+</p>
+
+				
+				
+			
+				
+				<h3 id="Channel.BlockingSubscription">func (Channel) <a href="/target/channel.go?s=3123:3197#L105">BlockingSubscription</a></h3>
+				<pre>func (this Channel) BlockingSubscription(subscription func(&lt;-chan string))</pre>
+				<p>
+BlockingSubscription sends a message through a go channel whenever a message has been published on this redis channel.
+When the function terminates, the subscription is canceled
+</p>
+
+				
+				
+			
+				
+				<h3 id="Channel.PatternSubscribe">func (Channel) <a href="/target/channel.go?s=2426:2538#L86">PatternSubscribe</a></h3>
+				<pre>func (this Channel) PatternSubscribe(action func(string)) (startSignal &lt;-chan nothing, finishSignaler io.Closer)</pre>
+				<p>
+PatternSubscribe calls the specified function whenever a message along any of the channels that fit the pattern is published.
+It returns a channel that allows you to know when the channel has started succesfully listening,
+and a way to signal when you&#39;re done listening
+</p>
+
+				
+				
+			
+				
+				<h3 id="Channel.Publish">func (Channel) <a href="/target/channel.go?s=3802:3856#L117">Publish</a></h3>
+				<pre>func (this Channel) Publish(message string) &lt;-chan int</pre>
+				<p>
+Publish publishes a message on this channel.
+Use Subscribe, PatternSubscribe, BlockingSubscription, or BlockingPatternSubscription to receive the published message
+</p>
+
+				
+				
+			
+				
+				<h3 id="Channel.Subscribe">func (Channel) <a href="/target/channel.go?s=1980:2085#L79">Subscribe</a></h3>
+				<pre>func (this Channel) Subscribe(action func(string)) (startSignal &lt;-chan nothing, finishSignaler io.Closer)</pre>
+				<p>
+Subscribe calls the specified function whenever a message along this channel is published.
+It returns a channel that allows you to know when the channel has started succesfully listening,
+and a way to signal when you&#39;re done listening
+</p>
+
+				
+				
+			
+				
+				<h3 id="Channel.Use">func (Channel) <a href="/target/channel.go?s=3978:4025#L122">Use</a></h3>
+				<pre>func (this Channel) Use(e SafeExecutor) Channel</pre>
+				<p>
+Use allows you to use this key on a different executor
+</p>
+
+				
+				
+			
+		
+			
+			
+			<h2 id="Client">type <a href="/target/redis.go?s=1249:1720#L43">Client</a></h2>
+			<pre>type Client struct {
+    <span class="comment">// contains filtered or unexported fields</span>
+}</pre>
+			<p>
+The Client is the base for all communication to and from Redis
+</p>
+
+
+			
+
+			
+
+			
+
+			
+				
+				<h3 id="Load">func <a href="/target/redis.go?s=2553:2601#L81">Load</a></h3>
+				<pre>func Load(configfile io.Reader) (*Client, error)</pre>
+				<p>
+Load reads in information, and uses the JSON information it finds therein to find the communcation hookup details for Redis.
+It then returns a Client based on the supplied information
+</p>
+
+				
+			
+				
+				<h3 id="New">func <a href="/target/redis.go?s=1817:1861#L52">New</a></h3>
+				<pre>func New(config Config) (r *Client, e error)</pre>
+				<p>
+New gives back a Client that communicates using the details specified in the supplied Config
+</p>
+
+				
+			
+
+			
+				
+				<h3 id="Client.Bits">func (*Client) <a href="/target/redis.go?s=5575:5616#L202">Bits</a></h3>
+				<pre>func (this *Client) Bits(key string) Bits</pre>
+				<p>
+Creates a Bits object.
+(This is a lightweight function - does *not* involve network I/O)
+</p>
+
+				
+				
+			
+				
+				<h3 id="Client.Channel">func (*Client) <a href="/target/redis.go?s=7710:7757#L268">Channel</a></h3>
+				<pre>func (this *Client) Channel(key string) Channel</pre>
+				<p>
+Creates a Channel Object.
+(This is a lightweight function - does *not* involve network I/O)
+</p>
+
+				
+				
+			
+				
+				<h3 id="Client.Close">func (*Client) <a href="/target/redis.go?s=2885:2918#L94">Close</a></h3>
+				<pre>func (this *Client) Close() error</pre>
+				<p>
+Close frees up all connections previously allocated.
+BUG: If you have connections still in use, things can get messy
+</p>
+
+				
+				
+			
+				
+				<h3 id="Client.Execute">func (Client) <a href="/target/redis.go?s=3484:3527#L116">Execute</a></h3>
+				<pre>func (this Client) Execute(command command)</pre>
+				<p>
+Execute allows commands to be executed directly through the Client without needing to specify a key
+</p>
+
+				
+				
+			
+				
+				<h3 id="Client.Float">func (*Client) <a href="/target/redis.go?s=5405:5448#L196">Float</a></h3>
+				<pre>func (this *Client) Float(key string) Float</pre>
+				<p>
+Creates a Float object.
+(This is a lightweight function - does *not* involve network I/O)
+</p>
+
+				
+				
+			
+				
+				<h3 id="Client.Hash">func (*Client) <a href="/target/redis.go?s=5742:5783#L208">Hash</a></h3>
+				<pre>func (this *Client) Hash(key string) Hash</pre>
+				<p>
+Creates a Hash object.
+(This is a lightweight function - does *not* involve network I/O)
+</p>
+
+				
+				
+			
+				
+				<h3 id="Client.IntList">func (*Client) <a href="/target/redis.go?s=6080:6127#L220">IntList</a></h3>
+				<pre>func (this *Client) IntList(key string) IntList</pre>
+				<p>
+Creates an IntList object.
+(This is a lightweight function - does *not* involve network I/O)
+</p>
+
+				
+				
+			
+				
+				<h3 id="Client.IntSet">func (*Client) <a href="/target/redis.go?s=6422:6467#L232">IntSet</a></h3>
+				<pre>func (this *Client) IntSet(key string) IntSet</pre>
+				<p>
+Creates an IntSet Object.
+(This is a lightweight function - does *not* involve network I/O)
+</p>
+
+				
+				
+			
+				
+				<h3 id="Client.Integer">func (*Client) <a href="/target/redis.go?s=5228:5275#L190">Integer</a></h3>
+				<pre>func (this *Client) Integer(key string) Integer</pre>
+				<p>
+Creates an Integer object.
+(This is a lightweight function - does *not* involve network I/O)
+</p>
+
+				
+				
+			
+				
+				<h3 id="Client.Key">func (*Client) <a href="/target/redis.go?s=4885:4924#L178">Key</a></h3>
+				<pre>func (this *Client) Key(key string) Key</pre>
+				<p>
+Creates a basic key.
+(This is a lightweight function - does *not* involve network I/O)
+</p>
+
+				
+				
+			
+				
+				<h3 id="Client.List">func (*Client) <a href="/target/redis.go?s=5909:5950#L214">List</a></h3>
+				<pre>func (this *Client) List(key string) List</pre>
+				<p>
+Creates a List object.
+(This is a lightweight function - does *not* involve network I/O)
+</p>
+
+				
+				
+			
+				
+				<h3 id="Client.Mutex">func (*Client) <a href="/target/redis.go?s=7026:7069#L250">Mutex</a></h3>
+				<pre>func (this *Client) Mutex(key string) Mutex</pre>
+				<p>
+Creates a Mutex Object.
+(Warning - this is *not* a lightweight function - there is some network I/O involved in mutex initialization)
+</p>
+
+				
+				
+			
+				
+				<h3 id="Client.Pipeline">func (Client) <a href="/target/transaction.go?s=1658:1714#L50">Pipeline</a></h3>
+				<pre>func (this Client) Pipeline(callback func(SafeExecutor))</pre>
+				<p>
+Pipeline creates an Executor that will force every command issued on it to be sent at the same time (thus saving on network costs).
+It waits until the end of the function to execute them
+</p>
+
+				
+				
+			
+				
+				<h3 id="Client.Prefix">func (*Client) <a href="/target/redis.go?s=7931:7976#L274">Prefix</a></h3>
+				<pre>func (this *Client) Prefix(key string) Prefix</pre>
+				<p>
+Creates a Prefix Object, which helps namespace other Redis Objects.
+(This is a lightweight function - does *not* involve network I/O)
+</p>
+
+				
+				
+			
+				
+				<h3 id="Client.ReadWriteMutex">func (*Client) <a href="/target/redis.go?s=7494:7569#L262">ReadWriteMutex</a></h3>
+				<pre>func (this *Client) ReadWriteMutex(key string, readers int) *ReadWriteMutex</pre>
+				<p>
+Creates a ReadWriteMutex Object.
+(Warning - this is *not* a lightweight function - there is some network I/O involved in mutex initialization)
+</p>
+
+				
+				
+			
+				
+				<h3 id="Client.Semaphore">func (*Client) <a href="/target/redis.go?s=7248:7306#L256">Semaphore</a></h3>
+				<pre>func (this *Client) Semaphore(key string, count int) Mutex</pre>
+				<p>
+Creates a Semaphore Object.
+(Warning - this is *not* a lightweight function - there is some network I/O involved in mutex initialization)
+</p>
+
+				
+				
+			
+				
+				<h3 id="Client.Set">func (*Client) <a href="/target/redis.go?s=6255:6294#L226">Set</a></h3>
+				<pre>func (this *Client) Set(key string) Set</pre>
+				<p>
+Creates a Set Object.
+(This is a lightweight function - does *not* involve network I/O)
+</p>
+
+				
+				
+			
+				
+				<h3 id="Client.SetErrorCallback">func (*Client) <a href="/target/redis.go?s=3865:3931#L128">SetErrorCallback</a></h3>
+				<pre>func (this *Client) SetErrorCallback(callback func(error, string))</pre>
+				<p>
+Since redis operates in a separate thread, it isn&#39;t always possible to return an error status easily.
+SetErrorCallback allows you to react to an error when it happens
+</p>
+
+				
+				
+			
+				
+				<h3 id="Client.SortedIntSet">func (*Client) <a href="/target/redis.go?s=6790:6847#L244">SortedIntSet</a></h3>
+				<pre>func (this *Client) SortedIntSet(key string) SortedIntSet</pre>
+				<p>
+Creates a SortedIntSet Object.
+(This is a lightweight function - does *not* involve network I/O)
+</p>
+
+				
+				
+			
+				
+				<h3 id="Client.SortedSet">func (*Client) <a href="/target/redis.go?s=6600:6651#L238">SortedSet</a></h3>
+				<pre>func (this *Client) SortedSet(key string) SortedSet</pre>
+				<p>
+Creates a SortedSet Object.
+(This is a lightweight function - does *not* involve network I/O)
+</p>
+
+				
+				
+			
+				
+				<h3 id="Client.String">func (*Client) <a href="/target/redis.go?s=5051:5096#L184">String</a></h3>
+				<pre>func (this *Client) String(key string) String</pre>
+				<p>
+Creates a String object.
+(This is a lightweight function - does *not* involve network I/O)
+</p>
+
+				
+				
+			
+				
+				<h3 id="Client.Transaction">func (Client) <a href="/target/transaction.go?s=1984:2043#L59">Transaction</a></h3>
+				<pre>func (this Client) Transaction(callback func(SafeExecutor))</pre>
+				<p>
+Transaction creates an Executor that will tell redis to queue all of the commands and complete them atomically
+(this prevents other clients from issuing commands in between yours)
+</p>
+
+				
+				
+			
+		
+			
+			
+			<h2 id="Config">type <a href="/target/redis.go?s=146:373#L2">Config</a></h2>
+			<pre>type Config struct {
+    NetType         string `json:&#34;nettype&#34;`
+    NetAddress      string `json:&#34;netaddr&#34;`
+    DBid            int    `json:&#34;dbid&#34;`
+    Password        string `json:&#34;password&#34;`
+    ConnectionCount int    `json:&#34;conncount&#34;`
+}</pre>
+			<p>
+The Config details how you plan to go about communicating with Redis
+</p>
+
+
+			
+
+			
+
+			
+
+			
+				
+				<h3 id="DefaultConfiguration">func <a href="/target/redis.go?s=596:630#L12">DefaultConfiguration</a></h3>
+				<pre>func DefaultConfiguration() Config</pre>
+				<p>
+DefaultConfiguration returns a config with the easiest method for communicating with Redis.
+All of the fields are public, so anything that needs to be changed for your setup can be done without affecting other fields
+</p>
+
+				
+			
+
+			
+		
+			
+			
+			<h2 id="Connection">type <a href="/target/connection.go?s=161:225#L1">Connection</a></h2>
+			<pre>type Connection struct {
+    net.Conn
+    <span class="comment">// contains filtered or unexported fields</span>
+}</pre>
+			<p>
+A Connection is a single connection to a Redis Instance.
+Each client typically has a pool of these to work with
+</p>
+
+
+			
+
+			
+
+			
+
+			
+
+			
+				
+				<h3 id="Connection.Error">func (Connection) <a href="/target/connection.go?s=723:771#L28">Error</a></h3>
+				<pre>func (this Connection) Error(e error, c command)</pre>
+				<p>
+Error is how an error gets reported.
+Since The redis code operates in a separate goroutine, errors can&#39;t always be reported directly
+</p>
+
+				
+				
+			
+				
+				<h3 id="Connection.Execute">func (Connection) <a href="/target/connection.go?s=906:953#L33">Execute</a></h3>
+				<pre>func (this Connection) Execute(command command)</pre>
+				<p>
+Execute allows a command to be executed on a specific connection
+</p>
+
+				
+				
+			
+		
+			
+			
+			<h2 id="Executor">type <a href="/target/command.go?s=569:614#L26">Executor</a></h2>
+			<pre>type Executor interface {
+    Execute(command)
+}</pre>
+			<p>
+Anything that can execute a command is an Executor
+</p>
+
+
+			
+
+			
+
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="Float">type <a href="/target/float.go?s=218:244#L1">Float</a></h2>
+			<pre>type Float struct {
+    Key
+}</pre>
+			<p>
+Float is an object that acts as a Redis string primitive encapsulating the functions that operate on a floating point number
+See <a href="http://redis.io/commands#string">http://redis.io/commands#string</a> for more information on Redis Strings
+</p>
+
+
+			
+
+			
+
+			
+
+			
+
+			
+				
+				<h3 id="Float.DecrementBy">func (Float) <a href="/target/float.go?s=1817:1874#L47">DecrementBy</a></h3>
+				<pre>func (this Float) DecrementBy(val float64) &lt;-chan float64</pre>
+				<p>
+INCRBYFLOAT command -
+DecrementBy decreases the floating point value stored in an object by a set amount and returns the new amount
+</p>
+
+				
+				
+			
+				
+				<h3 id="Float.Get">func (Float) <a href="/target/float.go?s=1080:1118#L29">Get</a></h3>
+				<pre>func (this Float) Get() &lt;-chan float64</pre>
+				<p>
+GET command -
+Get gets the floating point value stored in the object
+</p>
+
+				
+				
+			
+				
+				<h3 id="Float.GetSet">func (Float) <a href="/target/float.go?s=1292:1344#L35">GetSet</a></h3>
+				<pre>func (this Float) GetSet(val float64) &lt;-chan float64</pre>
+				<p>
+GETSET command -
+GetSet gets the current floating point value stored in an object, and sets the value to a new one
+</p>
+
+				
+				
+			
+				
+				<h3 id="Float.IncrementBy">func (Float) <a href="/target/float.go?s=1550:1607#L41">IncrementBy</a></h3>
+				<pre>func (this Float) IncrementBy(val float64) &lt;-chan float64</pre>
+				<p>
+INCRBYFLOAT command -
+IncrementBy increments the floating point value stored in an object by a set amount and returns the new amount
+</p>
+
+				
+				
+			
+				
+				<h3 id="Float.IsValid">func (Float) <a href="/target/float.go?s=435:474#L6">IsValid</a></h3>
+				<pre>func (this Float) IsValid() &lt;-chan bool</pre>
+				<p>
+IsValid returns whether the underlying redis object can use the commands in this object
+</p>
+
+				
+				
+			
+				
+				<h3 id="Float.Set">func (Float) <a href="/target/float.go?s=656:705#L17">Set</a></h3>
+				<pre>func (this Float) Set(val float64) &lt;-chan nothing</pre>
+				<p>
+SET command -
+Set sets the object to a specific floating point value
+</p>
+
+				
+				
+			
+				
+				<h3 id="Float.SetIfEmpty">func (Float) <a href="/target/float.go?s=887:940#L23">SetIfEmpty</a></h3>
+				<pre>func (this Float) SetIfEmpty(val float64) &lt;-chan bool</pre>
+				<p>
+SETNX command -
+SetIfEmpty sets the object to a specfic floating point value, but only if it was empty beforehand
+</p>
+
+				
+				
+			
+				
+				<h3 id="Float.Use">func (Float) <a href="/target/float.go?s=2005:2048#L52">Use</a></h3>
+				<pre>func (this Float) Use(e SafeExecutor) Float</pre>
+				<p>
+Use allows you to use this key on a different executor
+</p>
+
+				
+				
+			
+		
+			
+			
+			<h2 id="Hash">type <a href="/target/hash.go?s=171:196#L1">Hash</a></h2>
+			<pre>type Hash struct {
+    Key
+}</pre>
+			<p>
+Hash is a object that implements the redis Hash primitive
+See <a href="http://redis.io/commands#hash">http://redis.io/commands#hash</a> for more information on Redis Hashes
+</p>
+
+
+			
+
+			
+
+			
+
+			
+
+			
+				
+				<h3 id="Hash.Float">func (Hash) <a href="/target/hash.go?s=944:988#L30">Float</a></h3>
+				<pre>func (this Hash) Float(key string) HashFloat</pre>
+				<p>
+Float defines a field within the Hash that will be treated as a basic float
+</p>
+
+				
+				
+			
+				
+				<h3 id="Hash.Get">func (Hash) <a href="/target/hash.go?s=1285:1332#L42">Get</a></h3>
+				<pre>func (this Hash) Get() &lt;-chan map[string]string</pre>
+				<p>
+HGETALL command -
+Get returns a map that contains all of the values in the hash
+</p>
+
+				
+				
+			
+				
+				<h3 id="Hash.Integer">func (Hash) <a href="/target/hash.go?s=778:826#L25">Integer</a></h3>
+				<pre>func (this Hash) Integer(key string) HashInteger</pre>
+				<p>
+Integer defines a field within the Hash that will be treated as a basic integer
+</p>
+
+				
+				
+			
+				
+				<h3 id="Hash.IsValid">func (Hash) <a href="/target/hash.go?s=384:422#L10">IsValid</a></h3>
+				<pre>func (this Hash) IsValid() &lt;-chan bool</pre>
+				<p>
+IsValid returns whether the underlying redis object can use the commands in this object
+</p>
+
+				
+				
+			
+				
+				<h3 id="Hash.Size">func (Hash) <a href="/target/hash.go?s=1113:1147#L36">Size</a></h3>
+				<pre>func (this Hash) Size() &lt;-chan int</pre>
+				<p>
+HLEN command -
+Size returns the number of fields that currently exist in the Hash
+</p>
+
+				
+				
+			
+				
+				<h3 id="Hash.String">func (Hash) <a href="/target/hash.go?s=611:657#L20">String</a></h3>
+				<pre>func (this Hash) String(key string) HashString</pre>
+				<p>
+String defines a field within the Hash that will be treated as a basic string
+</p>
+
+				
+				
+			
+				
+				<h3 id="Hash.Use">func (Hash) <a href="/target/hash.go?s=5595:5636#L190">Use</a></h3>
+				<pre>func (this Hash) Use(e SafeExecutor) Hash</pre>
+				<p>
+Use allows you to use this key on a different executor
+</p>
+
+				
+				
+			
+		
+			
+			
+			<h2 id="HashField">type <a href="/target/hash.go?s=1453:1506#L47">HashField</a></h2>
+			<pre>type HashField struct {
+    <span class="comment">// contains filtered or unexported fields</span>
+}</pre>
+			<p>
+HashField implements basic functions that apply to Hash Fields
+</p>
+
+
+			
+
+			
+
+			
+
+			
+
+			
+				
+				<h3 id="HashField.Delete">func (HashField) <a href="/target/hash.go?s=1897:1939#L66">Delete</a></h3>
+				<pre>func (this HashField) Delete() &lt;-chan bool</pre>
+				<p>
+HDEL command -
+Delete removes this field from the Hash if it exists;
+returns whether or not the delete suceeded
+</p>
+
+				
+				
+			
+				
+				<h3 id="HashField.Exists">func (HashField) <a href="/target/hash.go?s=2087:2129#L72">Exists</a></h3>
+				<pre>func (this HashField) Exists() &lt;-chan bool</pre>
+				<p>
+HEXISTS command -
+Exists returns whether or not this field exists within the hash
+</p>
+
+				
+				
+			
+		
+			
+			
+			<h2 id="HashFloat">type <a href="/target/hash.go?s=4355:4391#L148">HashFloat</a></h2>
+			<pre>type HashFloat struct {
+    HashField
+}</pre>
+			<p>
+HashFloat is an object that implements the Hash functions that apply to float fields
+</p>
+
+
+			
+
+			
+
+			
+
+			
+
+			
+				
+				<h3 id="HashFloat.DecrementBy">func (HashFloat) <a href="/target/hash.go?s=5395:5456#L185">DecrementBy</a></h3>
+				<pre>func (this HashFloat) DecrementBy(val float64) &lt;-chan float64</pre>
+				<p>
+HINCRBYFLOAT command -
+DecrementBy decreases the float in this field by &#34;val&#34;
+</p>
+
+				
+				
+			
+				
+				<h3 id="HashFloat.Get">func (HashFloat) <a href="/target/hash.go?s=4551:4593#L160">Get</a></h3>
+				<pre>func (this HashFloat) Get() &lt;-chan float64</pre>
+				<p>
+HGET command -
+Get gets the float in this field
+</p>
+
+				
+				
+			
+				
+				<h3 id="HashFloat.IncrementBy">func (HashFloat) <a href="/target/hash.go?s=5170:5231#L179">IncrementBy</a></h3>
+				<pre>func (this HashFloat) IncrementBy(val float64) &lt;-chan float64</pre>
+				<p>
+HINCRYBYFLOAT command -
+IncrementBy increases the float in this field by &#34;val&#34;
+</p>
+
+				
+				
+			
+				
+				<h3 id="HashFloat.Set">func (HashFloat) <a href="/target/hash.go?s=4706:4756#L166">Set</a></h3>
+				<pre>func (this HashFloat) Set(val float64) &lt;-chan bool</pre>
+				<p>
+HSET command -
+Set sets this field to a float
+</p>
+
+				
+				
+			
+				
+				<h3 id="HashFloat.SetIfEmpty">func (HashFloat) <a href="/target/hash.go?s=4955:5012#L173">SetIfEmpty</a></h3>
+				<pre>func (this HashFloat) SetIfEmpty(val float64) &lt;-chan bool</pre>
+				<p>
+HSETNX command -
+SetIfEmpty sets this field to a float if nothing is already in it;
+returns whether or not it succeeded
+</p>
+
+				
+				
+			
+		
+			
+			
+			<h2 id="HashInteger">type <a href="/target/hash.go?s=3131:3169#L107">HashInteger</a></h2>
+			<pre>type HashInteger struct {
+    HashField
+}</pre>
+			<p>
+HashInteger implements the basic functions on hash fields that are basic integers
+</p>
+
+
+			
+
+			
+
+			
+
+			
+
+			
+				
+				<h3 id="HashInteger.DecrementBy">func (HashInteger) <a href="/target/hash.go?s=4138:4193#L143">DecrementBy</a></h3>
+				<pre>func (this HashInteger) DecrementBy(val int) &lt;-chan int</pre>
+				<p>
+HINCRBY command -
+DecrementBy decreases the integer in this field by &#34;val&#34;
+</p>
+
+				
+				
+			
+				
+				<h3 id="HashInteger.Get">func (HashInteger) <a href="/target/hash.go?s=3348:3388#L119">Get</a></h3>
+				<pre>func (this HashInteger) Get() &lt;-chan int</pre>
+				<p>
+HGET command -
+Get returns the integer that is in this field
+</p>
+
+				
+				
+			
+				
+				<h3 id="HashInteger.IncrementBy">func (HashInteger) <a href="/target/hash.go?s=3929:3984#L137">IncrementBy</a></h3>
+				<pre>func (this HashInteger) IncrementBy(val int) &lt;-chan int</pre>
+				<p>
+HINCRBY command -
+IncremementBy increments the integer in this field by &#34;val&#34;
+</p>
+
+				
+				
+			
+				
+				<h3 id="HashInteger.Set">func (HashInteger) <a href="/target/hash.go?s=3502:3550#L125">Set</a></h3>
+				<pre>func (this HashInteger) Set(val int) &lt;-chan bool</pre>
+				<p>
+HSET command -
+Set sets this field to an integer
+</p>
+
+				
+				
+			
+				
+				<h3 id="HashInteger.SetIfEmpty">func (HashInteger) <a href="/target/hash.go?s=3717:3772#L131">SetIfEmpty</a></h3>
+				<pre>func (this HashInteger) SetIfEmpty(val int) &lt;-chan bool</pre>
+				<p>
+HSETNX command -
+SetIfEmpty sets this field to an integer but only if it was empty before
+</p>
+
+				
+				
+			
+		
+			
+			
+			<h2 id="HashString">type <a href="/target/hash.go?s=2275:2312#L77">HashString</a></h2>
+			<pre>type HashString struct {
+    HashField
+}</pre>
+			<p>
+HashString implements the basic functions on hash fields that are basic strings
+</p>
+
+
+			
+
+			
+
+			
+
+			
+
+			
+				
+				<h3 id="HashString.Get">func (HashString) <a href="/target/hash.go?s=2487:2529#L89">Get</a></h3>
+				<pre>func (this HashString) Get() &lt;-chan string</pre>
+				<p>
+HGET command -
+Get returns the string that is in this field
+</p>
+
+				
+				
+			
+				
+				<h3 id="HashString.Set">func (HashString) <a href="/target/hash.go?s=2653:2703#L95">Set</a></h3>
+				<pre>func (this HashString) Set(val string) &lt;-chan bool</pre>
+				<p>
+HSET command -
+Set sets this field to a specific string
+</p>
+
+				
+				
+			
+				
+				<h3 id="HashString.SetIfEmpty">func (HashString) <a href="/target/hash.go?s=2922:2979#L102">SetIfEmpty</a></h3>
+				<pre>func (this HashString) SetIfEmpty(val string) &lt;-chan bool</pre>
+				<p>
+HSETNX command -
+SetIfEmpty sets this field to a specific string if there isn&#39;t anything in it yet;
+returns whether or not the command succeeded
+</p>
+
+				
+				
+			
+		
+			
+			
+			<h2 id="IntList">type <a href="/target/intlist.go?s=229:265#L1">IntList</a></h2>
+			<pre>type IntList struct {
+    SortableKey
+}</pre>
+			<p>
+IntList implements the Redis List primitive assuming all inputs are ints (which is useful for indexes)
+See <a href="http://redis.io/commands#list">http://redis.io/commands#list</a> for more information on Redis Lists
+</p>
+
+
+			
+
+			
+
+			
+
+			
+
+			
+				
+				<h3 id="IntList.BlockUntilLeftPop">func (IntList) <a href="/target/intlist.go?s=2118:2168#L57">BlockUntilLeftPop</a></h3>
+				<pre>func (this IntList) BlockUntilLeftPop() &lt;-chan int</pre>
+				<p>
+BLPOP command -
+BlockUntilLeftPop pops the leftmost integer off of the list and returns it.
+If there is nothing in the list, it will wait until something gets placed in the list
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntList.BlockUntilLeftPopWithTimeout">func (IntList) <a href="/target/intlist.go?s=2437:2509#L64">BlockUntilLeftPopWithTimeout</a></h3>
+				<pre>func (this IntList) BlockUntilLeftPopWithTimeout(timeout int) &lt;-chan int</pre>
+				<p>
+BLPOP command -
+BlockUntilLeftPopWithTimeout pops the leftmost integer off of the list and returns it.
+If there is nothing in the list, it will wait up to &#34;timeout&#34; seconds for something to be placed in the list
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntList.BlockUntilMoveLastItemToList">func (IntList) <a href="/target/intlist.go?s=6452:6528#L161">BlockUntilMoveLastItemToList</a></h3>
+				<pre>func (this IntList) BlockUntilMoveLastItemToList(newList IntList) &lt;-chan int</pre>
+				<p>
+BRPOPLPUSH command -
+BlockUntilMoveLastItemToList moves the last item on this list to the front of a new list.
+If nothing is in this list, will wait until something is
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntList.BlockUntilMoveLastItemToListWithTimeout">func (IntList) <a href="/target/intlist.go?s=6832:6932#L168">BlockUntilMoveLastItemToListWithTimeout</a></h3>
+				<pre>func (this IntList) BlockUntilMoveLastItemToListWithTimeout(newList IntList, timeout int) &lt;-chan int</pre>
+				<p>
+BRPOPLPUSH command -
+BlockUntilMoveLastItemToListWithTimeout moves the last item on this list to the front of a new list.
+If nothing is in this list, will wait up to &#34;timeout&#34; seconds for something to be there before giving up
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntList.BlockUntilRightPop">func (IntList) <a href="/target/intlist.go?s=3015:3066#L78">BlockUntilRightPop</a></h3>
+				<pre>func (this IntList) BlockUntilRightPop() &lt;-chan int</pre>
+				<p>
+BRPOP command -
+BlockUntilRightPop pops the rightmost integer off of the list and returns it.
+If there is nothing in the list, it will wait for something to be placed in the list
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntList.BlockUntilRightPopWithTimeout">func (IntList) <a href="/target/intlist.go?s=3332:3405#L85">BlockUntilRightPopWithTimeout</a></h3>
+				<pre>func (this IntList) BlockUntilRightPopWithTimeout(timeout int) &lt;-chan int</pre>
+				<p>
+BRPOP command -
+BlockUntilRightPopWithTimeout pops the rightmost integer off of the list and returns it.
+If there is nothing in the list, it will wait up to &#34;timeout&#34; seconds for something to be placed in it
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntList.GetFromRange">func (IntList) <a href="/target/intlist.go?s=5476:5538#L139">GetFromRange</a></h3>
+				<pre>func (this IntList) GetFromRange(left, right int) &lt;-chan []int</pre>
+				<p>
+LRANGE command -
+GetFromRange returns all items from between two indices:
+negative indexes index from the right with -1 being the rightmost;
+non-negative indexes index from the left with 0 being the leftmost
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntList.Index">func (IntList) <a href="/target/intlist.go?s=3708:3755#L93">Index</a></h3>
+				<pre>func (this IntList) Index(index int) &lt;-chan int</pre>
+				<p>
+LINDEX command -
+Index returns the integer waiting at the specified index:
+negative indexes index from the right with -1 being the rightmost;
+non-negative indexes index from the left with 0 being the leftmost
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntList.InsertAfter">func (IntList) <a href="/target/intlist.go?s=5111:5170#L131">InsertAfter</a></h3>
+				<pre>func (this IntList) InsertAfter(pivot, item int) &lt;-chan int</pre>
+				<p>
+LINSERT command -
+InsertAbove inserts an item after a pivot
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntList.InsertBefore">func (IntList) <a href="/target/intlist.go?s=4896:4956#L125">InsertBefore</a></h3>
+				<pre>func (this IntList) InsertBefore(pivot, item int) &lt;-chan int</pre>
+				<p>
+LINSERT command -
+InsertBefore inserts an item before a pivot
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntList.IsValid">func (IntList) <a href="/target/intlist.go?s=470:511#L8">IsValid</a></h3>
+				<pre>func (this IntList) IsValid() &lt;-chan bool</pre>
+				<p>
+IsValid returns whether the underlying redis object can use the commands in this object
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntList.LeftPop">func (IntList) <a href="/target/intlist.go?s=1841:1881#L50">LeftPop</a></h3>
+				<pre>func (this IntList) LeftPop() &lt;-chan int</pre>
+				<p>
+LPOP command -
+LeftPop pops the leftmost integer off of the list and returns it.
+If there is nothing in the list, it returns nothing
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntList.LeftPush">func (IntList) <a href="/target/intlist.go?s=857:910#L25">LeftPush</a></h3>
+				<pre>func (this IntList) LeftPush(items ...int) &lt;-chan int</pre>
+				<p>
+LPUSH command -
+LeftPush pushes an integer onto the left side of this list
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntList.LeftPushIfExists">func (IntList) <a href="/target/intlist.go?s=1096:1153#L31">LeftPushIfExists</a></h3>
+				<pre>func (this IntList) LeftPushIfExists(item int) &lt;-chan int</pre>
+				<p>
+LPUSHX command -
+LeftPushIfExists pushes an integer onto the left side of the list if the list exists
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntList.Length">func (IntList) <a href="/target/intlist.go?s=685:724#L19">Length</a></h3>
+				<pre>func (this IntList) Length() &lt;-chan int</pre>
+				<p>
+LLEN command -
+Length returns the number of items in this list
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntList.MoveLastItemToList">func (IntList) <a href="/target/intlist.go?s=6141:6207#L154">MoveLastItemToList</a></h3>
+				<pre>func (this IntList) MoveLastItemToList(newList IntList) &lt;-chan int</pre>
+				<p>
+RPOPLPUSH command -
+MoveLastItemToList moves the last item on this list to the front of a new list.
+If nothing is in this list, nothing happens
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntList.Remove">func (IntList) <a href="/target/intlist.go?s=3901:3952#L99">Remove</a></h3>
+				<pre>func (this IntList) Remove(items ...int) &lt;-chan int</pre>
+				<p>
+LREM command -
+Remove removes all instances of all instances within items
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntList.RemoveNFromLeft">func (IntList) <a href="/target/intlist.go?s=4131:4194#L105">RemoveNFromLeft</a></h3>
+				<pre>func (this IntList) RemoveNFromLeft(n int, item int) &lt;-chan int</pre>
+				<p>
+LREM command -
+Removes the first &#34;n&#34; instances of &#34;item&#34; from the list
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntList.RemoveNFromRight">func (IntList) <a href="/target/intlist.go?s=4342:4406#L111">RemoveNFromRight</a></h3>
+				<pre>func (this IntList) RemoveNFromRight(n int, item int) &lt;-chan int</pre>
+				<p>
+LREM command -
+Removes the last &#34;n&#34; instances of &#34;item&#34; from the list
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntList.RightPop">func (IntList) <a href="/target/intlist.go?s=2736:2777#L71">RightPop</a></h3>
+				<pre>func (this IntList) RightPop() &lt;-chan int</pre>
+				<p>
+RPOP command -
+RightPop pops the rightmost integer off of the list and returns it.
+If there is nothing in the list, it returns nothing
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntList.RightPush">func (IntList) <a href="/target/intlist.go?s=1318:1372#L37">RightPush</a></h3>
+				<pre>func (this IntList) RightPush(items ...int) &lt;-chan int</pre>
+				<p>
+RPUSH command -
+RightPush pushes an integer onto the right side of this list - RPUSH command
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntList.RightPushIfExists">func (IntList) <a href="/target/intlist.go?s=1577:1635#L43">RightPushIfExists</a></h3>
+				<pre>func (this IntList) RightPushIfExists(item int) &lt;-chan int</pre>
+				<p>
+RPUSHX command -
+RightPushIfExists pushes an integer onto the right side of this list if the list exists - RPUSHX command
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntList.Set">func (IntList) <a href="/target/intlist.go?s=4693:4752#L119">Set</a></h3>
+				<pre>func (this IntList) Set(index int, item int) &lt;-chan nothing</pre>
+				<p>
+LSET command -
+Set sets the integer at the specified index to &#34;item&#34;:
+negative indexes index from the right with -1 being the rightmost;
+non-negative indexes index from the left with 0 being the leftmost
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntList.TrimToRange">func (IntList) <a href="/target/intlist.go?s=5849:5912#L147">TrimToRange</a></h3>
+				<pre>func (this IntList) TrimToRange(left, right int) &lt;-chan nothing</pre>
+				<p>
+LTRIM command -
+TrimToRange removes all items not within the two indices:
+negative indexes index from the right with -1 being the rightmost;
+non-negative indexes index from the left with 0 being the leftmost
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntList.Use">func (IntList) <a href="/target/intlist.go?s=7076:7123#L173">Use</a></h3>
+				<pre>func (this IntList) Use(e SafeExecutor) IntList</pre>
+				<p>
+Use allows you to use this key on a different executor
+</p>
+
+				
+				
+			
+		
+			
+			
+			<h2 id="IntSet">type <a href="/target/intset.go?s=226:261#L1">IntSet</a></h2>
+			<pre>type IntSet struct {
+    SortableKey
+}</pre>
+			<p>
+IntSet implements the Redis Set primitive assuming all inputs are integers (which is useful for indexes)
+see <a href="http://redis.io/commands#set">http://redis.io/commands#set</a> for more information on redis sets
+</p>
+
+
+			
+
+			
+
+			
+
+			
+
+			
+				
+				<h3 id="IntSet.Add">func (IntSet) <a href="/target/intset.go?s=659:703#L19">Add</a></h3>
+				<pre>func (this IntSet) Add(item int) &lt;-chan bool</pre>
+				<p>
+SADD command -
+Add adds an integer to the set
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntSet.Difference">func (IntSet) <a href="/target/intset.go?s=2564:2627#L81">Difference</a></h3>
+				<pre>func (this IntSet) Difference(otherSets ...IntSet) &lt;-chan []int</pre>
+				<p>
+SDIFF command -
+Difference returns a list of all integers that are in this set, but not another
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntSet.Intersection">func (IntSet) <a href="/target/intset.go?s=1942:2007#L61">Intersection</a></h3>
+				<pre>func (this IntSet) Intersection(otherSets ...IntSet) &lt;-chan []int</pre>
+				<p>
+SINTER command -
+Intersection returns a list of all integers that this and another set have in common
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntSet.IsMember">func (IntSet) <a href="/target/intset.go?s=1207:1256#L37">IsMember</a></h3>
+				<pre>func (this IntSet) IsMember(item int) &lt;-chan bool</pre>
+				<p>
+SISMEMBER command -
+IsMember returns whether or not an integer is part of the set
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntSet.IsValid">func (IntSet) <a href="/target/intset.go?s=463:503#L8">IsValid</a></h3>
+				<pre>func (this IntSet) IsValid() &lt;-chan bool</pre>
+				<p>
+IsValid returns whether the underlying redis object can use the commands in this object
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntSet.Members">func (IntSet) <a href="/target/intset.go?s=1008:1049#L31">Members</a></h3>
+				<pre>func (this IntSet) Members() &lt;-chan []int</pre>
+				<p>
+SMEMBERS command -
+Members lists all of the integers in the set
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntSet.MoveMemberTo">func (IntSet) <a href="/target/intset.go?s=4036:4104#L125">MoveMemberTo</a></h3>
+				<pre>func (this IntSet) MoveMemberTo(newSet IntSet, item int) &lt;-chan bool</pre>
+				<p>
+SMOVE command -
+MoveMemberTo removes an integer from this set if it exists, and then adds it to another set.
+Nothing happens if the integer was not a member of this set
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntSet.Pop">func (IntSet) <a href="/target/intset.go?s=1748:1783#L55">Pop</a></h3>
+				<pre>func (this IntSet) Pop() &lt;-chan int</pre>
+				<p>
+SPOP command -
+Pop removes a random integer from the set and returns it to you
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntSet.RandomMember">func (IntSet) <a href="/target/intset.go?s=1561:1605#L49">RandomMember</a></h3>
+				<pre>func (this IntSet) RandomMember() &lt;-chan int</pre>
+				<p>
+SRANDMEMBER command -
+RandomMember returns a random integer from the set
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntSet.Remove">func (IntSet) <a href="/target/intset.go?s=827:874#L25">Remove</a></h3>
+				<pre>func (this IntSet) Remove(item int) &lt;-chan bool</pre>
+				<p>
+SREM command -
+Remove removes an integer from the set
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntSet.Size">func (IntSet) <a href="/target/intset.go?s=1394:1430#L43">Size</a></h3>
+				<pre>func (this IntSet) Size() &lt;-chan int</pre>
+				<p>
+SCARD command -
+Size returns the number of elements in the set
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntSet.StoreDifferenceOf">func (IntSet) <a href="/target/intset.go?s=3663:3726#L114">StoreDifferenceOf</a></h3>
+				<pre>func (this IntSet) StoreDifferenceOf(sets ...IntSet) &lt;-chan int</pre>
+				<p>
+SDIFFSTORE command -
+StoreDifferenceOf finds the difference between two other sets and stores it in this one.
+It returns the number of elements in the new set
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntSet.StoreIntersectionOf">func (IntSet) <a href="/target/intset.go?s=2947:3012#L92">StoreIntersectionOf</a></h3>
+				<pre>func (this IntSet) StoreIntersectionOf(sets ...IntSet) &lt;-chan int</pre>
+				<p>
+SINTERSTORE command -
+StoreIntersectionOf finds the intersection of multiple other sets and stores it in this one.
+It returns the number of elements in the new set
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntSet.StoreUnionOf">func (IntSet) <a href="/target/intset.go?s=3304:3362#L103">StoreUnionOf</a></h3>
+				<pre>func (this IntSet) StoreUnionOf(sets ...IntSet) &lt;-chan int</pre>
+				<p>
+SUNIONSTORE command -
+StoreUnionOf finds the union of multiple other sets and stores it in this one.
+It returns the number of elements in the new set
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntSet.Union">func (IntSet) <a href="/target/intset.go?s=2255:2313#L71">Union</a></h3>
+				<pre>func (this IntSet) Union(otherSets ...IntSet) &lt;-chan []int</pre>
+				<p>
+SUNION command -
+Union returns a list of all integers that are either in this set or another
+</p>
+
+				
+				
+			
+				
+				<h3 id="IntSet.Use">func (IntSet) <a href="/target/intset.go?s=4240:4285#L130">Use</a></h3>
+				<pre>func (this IntSet) Use(e SafeExecutor) IntSet</pre>
+				<p>
+Use allows you to use this key on a different executor
+</p>
+
+				
+				
+			
+		
+			
+			
+			<h2 id="Integer">type <a href="/target/integer.go?s=218:246#L1">Integer</a></h2>
+			<pre>type Integer struct {
+    Key
+}</pre>
+			<p>
+Float is an object that acts as a Redis string primitive encapsulating the functions that operate on a floating point number
+See <a href="http://redis.io/commands#string">http://redis.io/commands#string</a> for more information on Redis Strings
+</p>
+
+
+			
+
+			
+
+			
+
+			
+
+			
+				
+				<h3 id="Integer.Decrement">func (Integer) <a href="/target/integer.go?s=1799:1841#L53">Decrement</a></h3>
+				<pre>func (this Integer) Decrement() &lt;-chan int</pre>
+				<p>
+DECR command -
+Decrement decrements this integer and returns the new value
+</p>
+
+				
+				
+			
+				
+				<h3 id="Integer.DecrementBy">func (Integer) <a href="/target/integer.go?s=1987:2038#L59">DecrementBy</a></h3>
+				<pre>func (this Integer) DecrementBy(val int) &lt;-chan int</pre>
+				<p>
+DECRBY command -
+DecrementBy decreases this integer by &#34;val&#34;, and returns the new value
+</p>
+
+				
+				
+			
+				
+				<h3 id="Integer.Get">func (Integer) <a href="/target/integer.go?s=1020:1056#L29">Get</a></h3>
+				<pre>func (this Integer) Get() &lt;-chan int</pre>
+				<p>
+GET command -
+Get returns the the value of this integer
+</p>
+
+				
+				
+			
+				
+				<h3 id="Integer.GetSet">func (Integer) <a href="/target/integer.go?s=1197:1243#L35">GetSet</a></h3>
+				<pre>func (this Integer) GetSet(val int) &lt;-chan int</pre>
+				<p>
+GETSET command -
+Gets the value of this integer before setting it to something else
+</p>
+
+				
+				
+			
+				
+				<h3 id="Integer.Increment">func (Integer) <a href="/target/integer.go?s=1401:1443#L41">Increment</a></h3>
+				<pre>func (this Integer) Increment() &lt;-chan int</pre>
+				<p>
+INCR command -
+Increment increases the value of this integer and returns the new value
+</p>
+
+				
+				
+			
+				
+				<h3 id="Integer.IncrementBy">func (Integer) <a href="/target/integer.go?s=1602:1653#L47">IncrementBy</a></h3>
+				<pre>func (this Integer) IncrementBy(val int) &lt;-chan int</pre>
+				<p>
+INCRBY command -
+IncrementBy increases the value of this integer by &#34;val&#34;, and returns the new value
+</p>
+
+				
+				
+			
+				
+				<h3 id="Integer.IsValid">func (Integer) <a href="/target/integer.go?s=443:484#L6">IsValid</a></h3>
+				<pre>func (this Integer) IsValid() &lt;-chan bool</pre>
+				<p>
+IsValid returns whether the underlying redis object can use the commands in this object
+</p>
+
+				
+				
+			
+				
+				<h3 id="Integer.Set">func (Integer) <a href="/target/integer.go?s=641:688#L17">Set</a></h3>
+				<pre>func (this Integer) Set(val int) &lt;-chan nothing</pre>
+				<p>
+SET command -
+Set sets the Integer to &#34;val&#34;
+</p>
+
+				
+				
+			
+				
+				<h3 id="Integer.SetIfEmpty">func (Integer) <a href="/target/integer.go?s=842:893#L23">SetIfEmpty</a></h3>
+				<pre>func (this Integer) SetIfEmpty(val int) &lt;-chan bool</pre>
+				<p>
+SETNX command -
+SetIfEmpty sets the integer to &#34;val&#34;, but only if it was empty before
+</p>
+
+				
+				
+			
+				
+				<h3 id="Integer.Use">func (Integer) <a href="/target/integer.go?s=2161:2208#L64">Use</a></h3>
+				<pre>func (this Integer) Use(e SafeExecutor) Integer</pre>
+				<p>
+Use allows you to use this key on a different executor
+</p>
+
+				
+				
+			
+		
+			
+			
+			<h2 id="Key">type <a href="/target/key.go?s=207:262#L1">Key</a></h2>
+			<pre>type Key struct {
+    <span class="comment">// contains filtered or unexported fields</span>
+}</pre>
+			<p>
+Key is used as a base to give all types of keys the same basic commands
+see <a href="http://redis.io/commands#generic">http://redis.io/commands#generic</a> for more information on these types of commands
+</p>
+
+
+			
+
+			
+
+			
+
+			
+
+			
+				
+				<h3 id="Key.Delete">func (Key) <a href="/target/key.go?s=732:768#L24">Delete</a></h3>
+				<pre>func (this Key) Delete() &lt;-chan bool</pre>
+				<p>
+DEL command -
+Delete removes a key from Redis
+</p>
+
+				
+				
+			
+				
+				<h3 id="Key.Execute">func (Key) <a href="/target/key.go?s=2967:3007#L79">Execute</a></h3>
+				<pre>func (this Key) Execute(command command)</pre>
+				<p>
+Execute allows the Key to be an Executor, which makes things quicker to code
+</p>
+
+				
+				
+			
+				
+				<h3 id="Key.Exists">func (Key) <a href="/target/key.go?s=589:625#L18">Exists</a></h3>
+				<pre>func (this Key) Exists() &lt;-chan bool</pre>
+				<p>
+EXISTS command -
+Exists returns whether or not the key already exists
+</p>
+
+				
+				
+			
+				
+				<h3 id="Key.ExpireAt">func (Key) <a href="/target/key.go?s=2345:2402#L62">ExpireAt</a></h3>
+				<pre>func (this Key) ExpireAt(timestamp time.Time) &lt;-chan bool</pre>
+				<p>
+EXPIREAT command -
+ExpireAt sets the key to expire at a specific time
+</p>
+
+				
+				
+			
+				
+				<h3 id="Key.ExpireIn">func (Key) <a href="/target/key.go?s=1773:1833#L51">ExpireIn</a></h3>
+				<pre>func (this Key) ExpireIn(duration time.Duration) &lt;-chan bool</pre>
+				<p>
+PEXPIRE or EXPIRE command -
+ExpireIn sets the key to expire after a specified duration.
+Currently, if the duration is less than an hour, it will set the duration to the nearest millisecond;
+if the duration is greater than or equal to an hour, it will set the duration to the nearest second instead
+</p>
+
+				
+				
+			
+				
+				<h3 id="Key.MillisecondsToLive">func (Key) <a href="/target/key.go?s=2788:2835#L74">MillisecondsToLive</a></h3>
+				<pre>func (this Key) MillisecondsToLive() &lt;-chan int</pre>
+				<p>
+PTTL command -
+MillisecondsToLive returns the number of milliseconds left until this key is set to expire
+</p>
+
+				
+				
+			
+				
+				<h3 id="Key.MoveTo">func (Key) <a href="/target/key.go?s=1120:1168#L37">MoveTo</a></h3>
+				<pre>func (this Key) MoveTo(other Key) &lt;-chan nothing</pre>
+				<p>
+RENAME command -
+MoveTo transfers this key to a different one
+</p>
+
+				
+				
+			
+				
+				<h3 id="Key.MoveToIfEmpty">func (Key) <a href="/target/key.go?s=1344:1396#L43">MoveToIfEmpty</a></h3>
+				<pre>func (this Key) MoveToIfEmpty(other Key) &lt;-chan bool</pre>
+				<p>
+RENAMENX command -
+MoveToIfEmpty transfers this key to a different one, but only if the new one is empty
+</p>
+
+				
+				
+			
+				
+				<h3 id="Key.SecondsToLive">func (Key) <a href="/target/key.go?s=2583:2625#L68">SecondsToLive</a></h3>
+				<pre>func (this Key) SecondsToLive() &lt;-chan int</pre>
+				<p>
+TTL command -
+SecondsToLive returns to number of seconds until this key is set to expire
+</p>
+
+				
+				
+			
+				
+				<h3 id="Key.Type">func (Key) <a href="/target/key.go?s=961:997#L31">Type</a></h3>
+				<pre>func (this Key) Type() &lt;-chan string</pre>
+				<p>
+TYPE command -
+Type returns the type of the underlying key,
+specifically, it will be one of: none, string, list, set, zset and hash.
+</p>
+
+				
+				
+			
+				
+				<h3 id="Key.Use">func (Key) <a href="/target/key.go?s=3100:3139#L84">Use</a></h3>
+				<pre>func (this Key) Use(e SafeExecutor) Key</pre>
+				<p>
+Use allows you to use this key on a different executor
+</p>
+
+				
+				
+			
+		
+			
+			
+			<h2 id="List">type <a href="/target/list.go?s=15:48#L1">List</a></h2>
+			<pre>type List struct {
+    SortableKey
+}</pre>
+			
+
+			
+
+			
+
+			
+
+			
+
+			
+				
+				<h3 id="List.BlockUntilLeftPop">func (List) <a href="/target/list.go?s=1835:1885#L53">BlockUntilLeftPop</a></h3>
+				<pre>func (this List) BlockUntilLeftPop() &lt;-chan string</pre>
+				<p>
+BLPOP command -
+BlockUntilLeftPop pops an item from the left side of this list and returns it.
+If this list does not have anything in it, will wait until it does
+</p>
+
+				
+				
+			
+				
+				<h3 id="List.BlockUntilLeftPopWithTimeout">func (List) <a href="/target/list.go?s=2157:2229#L60">BlockUntilLeftPopWithTimeout</a></h3>
+				<pre>func (this List) BlockUntilLeftPopWithTimeout(timeout int) &lt;-chan string</pre>
+				<p>
+BLPOP command -
+BlockUntilLeftPopWithTimeout pops an item from the left side of this list and returns it.
+If this list does not have anything in it, will wait up to &#34;timeout&#34; seconds for something to enter the list
+</p>
+
+				
+				
+			
+				
+				<h3 id="List.BlockUntilMoveLastItemToList">func (List) <a href="/target/list.go?s=6165:6238#L157">BlockUntilMoveLastItemToList</a></h3>
+				<pre>func (this List) BlockUntilMoveLastItemToList(newList List) &lt;-chan string</pre>
+				<p>
+BRPOPLPUSH command -
+BlockUntilMoveLastItemToList moves the last item on this list to the front of a new list.
+If nothing is in this list, will wait until something is
+</p>
+
+				
+				
+			
+				
+				<h3 id="List.BlockUntilMoveLastItemToListWithTimeout">func (List) <a href="/target/list.go?s=6542:6639#L164">BlockUntilMoveLastItemToListWithTimeout</a></h3>
+				<pre>func (this List) BlockUntilMoveLastItemToListWithTimeout(newList List, timeout int) &lt;-chan string</pre>
+				<p>
+BRPOPLPUSH command -
+BlockUntilMoveLastItemToListWithTimeout moves the last item on this list to the front of a new list.
+If nothing is in this list, will wait up to &#34;timeout&#34; seconds for something to be there before giving up
+</p>
+
+				
+				
+			
+				
+				<h3 id="List.BlockUntilRightPop">func (List) <a href="/target/list.go?s=2740:2791#L74">BlockUntilRightPop</a></h3>
+				<pre>func (this List) BlockUntilRightPop() &lt;-chan string</pre>
+				<p>
+BRPOP command -
+BlockUntilRightPop pops an item from the right side of this list and returns it.
+If this list does not have anything in it, will wait until it does
+</p>
+
+				
+				
+			
+				
+				<h3 id="List.BlockUntilRightPopWithTimeout">func (List) <a href="/target/list.go?s=3066:3139#L81">BlockUntilRightPopWithTimeout</a></h3>
+				<pre>func (this List) BlockUntilRightPopWithTimeout(timeout int) &lt;-chan string</pre>
+				<p>
+BRPOP command -
+BlockUntilRightPopWIthTimeout pops an item from the right side of this list and returns it.
+If this list does not have anything in it, will wait up to &#34;timeout&#34; seconds for something to enter the list
+</p>
+
+				
+				
+			
+				
+				<h3 id="List.GetFromRange">func (List) <a href="/target/list.go?s=5205:5267#L135">GetFromRange</a></h3>
+				<pre>func (this List) GetFromRange(left, right int) &lt;-chan []string</pre>
+				<p>
+LRANGE command -
+GetFromRange returns all items from between two indices:
+negative indexes index from the right with -1 being the rightmost;
+non-negative indexes index from the left with 0 being the leftmost
+</p>
+
+				
+				
+			
+				
+				<h3 id="List.Index">func (List) <a href="/target/list.go?s=3448:3495#L89">Index</a></h3>
+				<pre>func (this List) Index(index int) &lt;-chan string</pre>
+				<p>
+LINDEX command -
+Index returns the item at the specified index:
+negative numbers index from the right, with -1 being the rightmost index;
+non-negative numbers index from the left, with 0 being the leftmost index
+</p>
+
+				
+				
+			
+				
+				<h3 id="List.InsertAfter">func (List) <a href="/target/list.go?s=4852:4911#L127">InsertAfter</a></h3>
+				<pre>func (this List) InsertAfter(pivot, item string) &lt;-chan int</pre>
+				<p>
+LINSERT AFTER command -
+InsertAfter inserts an item after a pivot
+</p>
+
+				
+				
+			
+				
+				<h3 id="List.InsertBefore">func (List) <a href="/target/list.go?s=4643:4703#L121">InsertBefore</a></h3>
+				<pre>func (this List) InsertBefore(pivot, item string) &lt;-chan int</pre>
+				<p>
+LINSERT BEFORE command -
+InsertBefore inserts an item before a pivot
+</p>
+
+				
+				
+			
+				
+				<h3 id="List.IsValid">func (List) <a href="/target/list.go?s=244:282#L4">IsValid</a></h3>
+				<pre>func (this List) IsValid() &lt;-chan bool</pre>
+				<p>
+IsValid returns whether the underlying redis object can use the commands in this object
+</p>
+
+				
+				
+			
+				
+				<h3 id="List.LeftPop">func (List) <a href="/target/list.go?s=1571:1611#L46">LeftPop</a></h3>
+				<pre>func (this List) LeftPop() &lt;-chan string</pre>
+				<p>
+LPOP command -
+LeftPop pops an item from the left side of this list and returns it.
+If this list does not have anything in it, nothing is returned
+</p>
+
+				
+				
+			
+				
+				<h3 id="List.LeftPush">func (List) <a href="/target/list.go?s=620:673#L21">LeftPush</a></h3>
+				<pre>func (this List) LeftPush(items ...string) &lt;-chan int</pre>
+				<p>
+LPUSH command -
+LeftPush pushes an item onto the left side of this list
+</p>
+
+				
+				
+			
+				
+				<h3 id="List.LeftPushIfExists">func (List) <a href="/target/list.go?s=860:917#L27">LeftPushIfExists</a></h3>
+				<pre>func (this List) LeftPushIfExists(item string) &lt;-chan int</pre>
+				<p>
+LPUSHX command -
+LeftPushIfExists pushes an item onto the left side of this list, but only if this list already exists
+</p>
+
+				
+				
+			
+				
+				<h3 id="List.Length">func (List) <a href="/target/list.go?s=455:491#L15">Length</a></h3>
+				<pre>func (this List) Length() &lt;-chan int</pre>
+				<p>
+LLEN command -
+Length returns the number of items in this list
+</p>
+
+				
+				
+			
+				
+				<h3 id="List.MoveLastItemToList">func (List) <a href="/target/list.go?s=5854:5917#L150">MoveLastItemToList</a></h3>
+				<pre>func (this List) MoveLastItemToList(newList List) &lt;-chan string</pre>
+				<p>
+RPOPLPUSH command -
+MoveLastItemToList moves the last item on this list to the front of a new list.
+If nothing is in this list, nothing happens
+</p>
+
+				
+				
+			
+				
+				<h3 id="List.Remove">func (List) <a href="/target/list.go?s=3644:3695#L95">Remove</a></h3>
+				<pre>func (this List) Remove(items ...string) &lt;-chan int</pre>
+				<p>
+LREM command -
+Remove removes all instances of all instances within items
+</p>
+
+				
+				
+			
+				
+				<h3 id="List.RemoveNFromLeft">func (List) <a href="/target/list.go?s=3875:3938#L101">RemoveNFromLeft</a></h3>
+				<pre>func (this List) RemoveNFromLeft(n int, item string) &lt;-chan int</pre>
+				<p>
+LREM command -
+RemoveNFromLeft removes the first &#34;n&#34; instances of &#34;item&#34; from the list
+</p>
+
+				
+				
+			
+				
+				<h3 id="List.RemoveNFromRight">func (List) <a href="/target/list.go?s=4097:4161#L107">RemoveNFromRight</a></h3>
+				<pre>func (this List) RemoveNFromRight(n int, item string) &lt;-chan int</pre>
+				<p>
+LREM command -
+RemoveNFromRight removes the last &#34;n&#34; instances of &#34;item&#34; from the list
+</p>
+
+				
+				
+			
+				
+				<h3 id="List.RightPop">func (List) <a href="/target/list.go?s=2473:2514#L67">RightPop</a></h3>
+				<pre>func (this List) RightPop() &lt;-chan string</pre>
+				<p>
+RPOP command -
+RightPop pops an item from the right side of this list and returns it.
+If this list does not have anything in it, nothing is returned
+</p>
+
+				
+				
+			
+				
+				<h3 id="List.RightPush">func (List) <a href="/target/list.go?s=1056:1110#L33">RightPush</a></h3>
+				<pre>func (this List) RightPush(items ...string) &lt;-chan int</pre>
+				<p>
+RPUSH command -
+RightPush pushes an item onto the right side of this list
+</p>
+
+				
+				
+			
+				
+				<h3 id="List.RightPushIfExists">func (List) <a href="/target/list.go?s=1299:1357#L39">RightPushIfExists</a></h3>
+				<pre>func (this List) RightPushIfExists(item string) &lt;-chan int</pre>
+				<p>
+RPUSHX command -
+RightPushIfExists pushes an item onto the right side of this list, but only if this list already exists
+</p>
+
+				
+				
+			
+				
+				<h3 id="List.Set">func (List) <a href="/target/list.go?s=4439:4498#L115">Set</a></h3>
+				<pre>func (this List) Set(index int, item string) &lt;-chan nothing</pre>
+				<p>
+LSET command -
+Set sets the item at the specified index to &#34;item&#34;:
+negative indexes index from the right with -1 being the rightmost;
+non-negative indexes index from the left with 0 being the leftmost
+</p>
+
+				
+				
+			
+				
+				<h3 id="List.TrimToRange">func (List) <a href="/target/list.go?s=5565:5625#L143">TrimToRange</a></h3>
+				<pre>func (this List) TrimToRange(left, right int) &lt;-chan nothing</pre>
+				<p>
+LTRIM command -
+TrimToRange removes all items not within the two indices:
+negative indexes index from the right with -1 being the rightmost;
+non-negative indexes index from the left with 0 being the leftmost
+</p>
+
+				
+				
+			
+				
+				<h3 id="List.Use">func (List) <a href="/target/list.go?s=6786:6827#L169">Use</a></h3>
+				<pre>func (this List) Use(e SafeExecutor) List</pre>
+				<p>
+Use allows you to use this key on a different executor
+</p>
+
+				
+				
+			
+		
+			
+			
+			<h2 id="Mutex">type <a href="/target/mutex.go?s=299:652#L1">Mutex</a></h2>
+			<pre>type Mutex interface {
+    <span class="comment">//Try will attempt to gain access to the mutex, but stop if it can&#39;t immediately gain access and return false.</span>
+    <span class="comment">//If it succeeds, it executes the function and returns true</span>
+    Try(action func(resourceID int)) bool
+
+    <span class="comment">//Force will block until the mutex is available, and then execute the function</span>
+    Force(action func(resourceID int))
+}</pre>
+			<p>
+Mutexes are useful when you need to make sure that two separate processes aren&#39;t using the same underlying resources
+But what do you do when the processes are an separate machines
+Redis can be used to facilitate the network-wide Mutex, and this is the interface I will be using
+</p>
+
+
+			
+
+			
+
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="Prefix">type <a href="/target/prefix.go?s=15:3102#L1">Prefix</a></h2>
+			<pre>type Prefix interface {
+    <span class="comment">//Key creates a basic key; you probably won&#39;t use this directly very often.</span>
+    <span class="comment">//This is a lightweight function - does *not* involve network I/O</span>
+    Key(key string) Key
+
+    <span class="comment">//String creates the definition for a basic Redis String primitive.</span>
+    <span class="comment">//This is a lightweight function - does *not* involve network I/O</span>
+    String(key string) String
+
+    <span class="comment">//Integer creates the definition for a Redis String primitive that contains an integer.</span>
+    <span class="comment">//This is a lightweight function - does *not* involve network I/O</span>
+    Integer(key string) Integer
+
+    <span class="comment">//Float creates the definition for a Redis String primitive that contains a floating point number.</span>
+    <span class="comment">//This is a lightweight function - does *not* involve network I/O</span>
+    Float(key string) Float
+
+    <span class="comment">//Bits creates the definition for a Redis String primitive that contains a bitfield.</span>
+    <span class="comment">//This is a lightweight function - does *not* involve network I/O</span>
+    Bits(key string) Bits
+
+    <span class="comment">//Hash creates the definition for a basic Redis Hash primitive.</span>
+    <span class="comment">//This is a lightweight function - does *not* involve network I/O</span>
+    Hash(key string) Hash
+
+    <span class="comment">//List creates the definition for a basic Redis List primitive.</span>
+    <span class="comment">//This is a lightweight function - does *not* involve network I/O</span>
+    List(key string) List
+
+    <span class="comment">//IntList creates the definition for a Redis List primitive that contains only integers.</span>
+    <span class="comment">//This is a lightweight function - does *not* involve network I/O</span>
+    IntList(key string) IntList
+
+    <span class="comment">//Set creates the definition for a basic Redis Set primitive.</span>
+    <span class="comment">//This is a lightweight function - does *not* involve network I/O</span>
+    Set(key string) Set
+
+    <span class="comment">//IntSet creates the definition for a Redis Set primitive that contains only integers.</span>
+    <span class="comment">//This is a lightweight function - does *not* involve network I/O</span>
+    IntSet(key string) IntSet
+
+    <span class="comment">//SortedSet creates the definition for a basic Redis ZSet primitive.</span>
+    <span class="comment">//This is a lightweight function - does *not* involve network I/O</span>
+    SortedSet(key string) SortedSet
+
+    <span class="comment">//SortedIntSet creates the definition for a Redis ZSet primitive that contains only integers.</span>
+    <span class="comment">//This is a lightweight function - does *not* involve network I/O</span>
+    SortedIntSet(key string) SortedIntSet
+
+    <span class="comment">//Mutex creates a Mutex within redis.</span>
+    <span class="comment">//Warning - this is *not* a lightweight function - there is some network I/O involved in mutex initialization</span>
+    Mutex(key string) Mutex
+
+    <span class="comment">//Semaphore creates a Semaphore within redis.</span>
+    <span class="comment">//Warning - this is *not* a lightweight function - there is some network I/O involved in mutex initialization</span>
+    Semaphore(key string, count int) Mutex
+
+    <span class="comment">//ReadWriteMutex creates a Read/Write Mutex within redis.</span>
+    <span class="comment">//Warning - this is *not* a lightweight function - there is some network I/O involved in mutex initialization</span>
+    ReadWriteMutex(key string, readers int) *ReadWriteMutex
+
+    <span class="comment">//Channel defines a pub/sub channel within redis.</span>
+    <span class="comment">//This is a lightweight function - does *not* involve network I/O</span>
+    Channel(key string) Channel
+
+    <span class="comment">//Prefix allows you to create a namespace for other redis primitives to help make sure there are no duplication conflicts.</span>
+    <span class="comment">//This is a lightweight function - does *not* involve network I/O</span>
+    Prefix(key string) Prefix
+}</pre>
+			
+
+			
+
+			
+
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="ReadWriteMutex">type <a href="/target/read write mutex.go?s=263:556#L1">ReadWriteMutex</a></h2>
+			<pre>type ReadWriteMutex struct {
+
+    <span class="comment">//Read is a semaphore that gives access to be able to read information and be sure nothing is trying to write</span>
+    Read Mutex
+
+    <span class="comment">//Write is a mutex that gives access to be able to write information such that nothing can read</span>
+    Write Mutex
+    <span class="comment">// contains filtered or unexported fields</span>
+}</pre>
+			<p>
+ReadWriteMutexes are useful for making sure nothing is trying to read data while you&#39;re trying to write to it
+When you&#39;re trying to read and write across a network, the mutex needs to work across the network too
+And redis works well for this
+</p>
+
+
+			
+
+			
+
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="SafeExecutor">type <a href="/target/command.go?s=708:777#L31">SafeExecutor</a></h2>
+			<pre>type SafeExecutor interface {
+    Executor
+    <span class="comment">// contains filtered or unexported methods</span>
+}</pre>
+			<p>
+Anything that can execute a command, and can deal with resulting errors is a SafeExecutor
+</p>
+
+
+			
+
+			
+
+			
+
+			
+
+			
+		
+			
+			
+			<h2 id="Set">type <a href="/target/set.go?s=148:180#L1">Set</a></h2>
+			<pre>type Set struct {
+    SortableKey
+}</pre>
+			<p>
+Set is an object that implements a basic Redis Set primitive
+see <a href="http://redis.io/commands#set">http://redis.io/commands#set</a> for more information on redis sets
+</p>
+
+
+			
+
+			
+
+			
+
+			
+
+			
+				
+				<h3 id="Set.Add">func (Set) <a href="/target/set.go?s=634:678#L18">Add</a></h3>
+				<pre>func (this Set) Add(item string) &lt;-chan bool</pre>
+				<p>
+SADD command -
+Add adds a string to the set if it isn&#39;t already there;
+returns whether or not the add succeeded
+</p>
+
+				
+				
+			
+				
+				<h3 id="Set.Difference">func (Set) <a href="/target/set.go?s=2519:2579#L81">Difference</a></h3>
+				<pre>func (this Set) Difference(otherSets ...Set) &lt;-chan []string</pre>
+				<p>
+SDIFF command -
+Difference returns all of the strings that are in this set, but not another
+</p>
+
+				
+				
+			
+				
+				<h3 id="Set.Intersection">func (Set) <a href="/target/set.go?s=1943:2005#L61">Intersection</a></h3>
+				<pre>func (this Set) Intersection(otherSets ...Set) &lt;-chan []string</pre>
+				<p>
+SINTER command -
+Intersection returns all of the strings that are in both this set and another
+</p>
+
+				
+				
+			
+				
+				<h3 id="Set.IsMember">func (Set) <a href="/target/set.go?s=1224:1273#L37">IsMember</a></h3>
+				<pre>func (this Set) IsMember(item string) &lt;-chan bool</pre>
+				<p>
+SISMEMBER -
+IsMember returns whether or not the string is a member of the set
+</p>
+
+				
+				
+			
+				
+				<h3 id="Set.IsValid">func (Set) <a href="/target/set.go?s=373:410#L6">IsValid</a></h3>
+				<pre>func (this Set) IsValid() &lt;-chan bool</pre>
+				<p>
+IsValid returns whether the underlying redis object can use the commands in this object
+</p>
+
+				
+				
+			
+				
+				<h3 id="Set.Members">func (Set) <a href="/target/set.go?s=1041:1082#L31">Members</a></h3>
+				<pre>func (this Set) Members() &lt;-chan []string</pre>
+				<p>
+SMEMBERS command -
+Members returns all of the strings in the set
+</p>
+
+				
+				
+			
+				
+				<h3 id="Set.MoveMemberTo">func (Set) <a href="/target/set.go?s=3881:3946#L125">MoveMemberTo</a></h3>
+				<pre>func (this Set) MoveMemberTo(newSet Set, item string) &lt;-chan bool</pre>
+				<p>
+SMOVE command
+MoveMemberTo removes a string from this set and adds it to another;
+nothing happens if the string doesn&#39;t exist in this set
+</p>
+
+				
+				
+			
+				
+				<h3 id="Set.Pop">func (Set) <a href="/target/set.go?s=1752:1787#L55">Pop</a></h3>
+				<pre>func (this Set) Pop() &lt;-chan string</pre>
+				<p>
+SPOP command -
+Pop removes a random string from the set and returns it
+</p>
+
+				
+				
+			
+				
+				<h3 id="Set.RandomMember">func (Set) <a href="/target/set.go?s=1569:1613#L49">RandomMember</a></h3>
+				<pre>func (this Set) RandomMember() &lt;-chan string</pre>
+				<p>
+SRANDMEMBER command -
+RandomMember returns a random string from the set
+</p>
+
+				
+				
+			
+				
+				<h3 id="Set.Remove">func (Set) <a href="/target/set.go?s=864:911#L25">Remove</a></h3>
+				<pre>func (this Set) Remove(item string) &lt;-chan bool</pre>
+				<p>
+SREM command -
+Remove removes a string from the set if it exists;
+returns whether or not the string existed in the set
+</p>
+
+				
+				
+			
+				
+				<h3 id="Set.Size">func (Set) <a href="/target/set.go?s=1405:1438#L43">Size</a></h3>
+				<pre>func (this Set) Size() &lt;-chan int</pre>
+				<p>
+SCARD command -
+Size returns the number of strings in the set
+</p>
+
+				
+				
+			
+				
+				<h3 id="Set.StoreDifferenceOf">func (Set) <a href="/target/set.go?s=3545:3602#L114">StoreDifferenceOf</a></h3>
+				<pre>func (this Set) StoreDifferenceOf(sets ...Set) &lt;-chan int</pre>
+				<p>
+SDIFFSTORE command -
+StoreDifferenceOf finds the difference of two other sets and stores it in this set;
+returns the size of the resulting set
+</p>
+
+				
+				
+			
+				
+				<h3 id="Set.StoreIntersectionOf">func (Set) <a href="/target/set.go?s=2871:2930#L92">StoreIntersectionOf</a></h3>
+				<pre>func (this Set) StoreIntersectionOf(sets ...Set) &lt;-chan int</pre>
+				<p>
+SINTERSTORE command -
+StoreIntersectionOf finds the intersection of two other sets and stores it in this set;
+returns the size of the resulting set
+</p>
+
+				
+				
+			
+				
+				<h3 id="Set.StoreUnionOf">func (Set) <a href="/target/set.go?s=3207:3259#L103">StoreUnionOf</a></h3>
+				<pre>func (this Set) StoreUnionOf(sets ...Set) &lt;-chan int</pre>
+				<p>
+SUNIONSTORE command -
+StoreUnionOf finds the union of two other sets and stores it in this set;
+returns the size of the resulting set
+</p>
+
+				
+				
+			
+				
+				<h3 id="Set.Union">func (Set) <a href="/target/set.go?s=2229:2284#L71">Union</a></h3>
+				<pre>func (this Set) Union(otherSets ...Set) &lt;-chan []string</pre>
+				<p>
+SUNION -
+Union returns all of the strings that are either in this set or another
+</p>
+
+				
+				
+			
+				
+				<h3 id="Set.Use">func (Set) <a href="/target/set.go?s=4076:4115#L130">Use</a></h3>
+				<pre>func (this Set) Use(e SafeExecutor) Set</pre>
+				<p>
+Use allows you to use this key on a different executor
+</p>
+
+				
+				
+			
+		
+			
+			
+			<h2 id="SortableKey">type <a href="/target/sort.go?s=308:340#L1">SortableKey</a></h2>
+			<pre>type SortableKey struct {
+    Key
+}</pre>
+			<p>
+SortableKey is a base type used to give other types the functions within here
+Redis&#39;s Sort function works with multiple types of keys, and in order to prevent too much code duplication, I&#39;ve just created a base type
+See <a href="http://redis.io/commands/sort">http://redis.io/commands/sort</a> for more information on Redis&#39;s sort
+</p>
+
+
+			
+
+			
+
+			
+
+			
+
+			
+				
+				<h3 id="SortableKey.SortAlphabetically">func (SortableKey) <a href="/target/sort.go?s=530:582#L7">SortAlphabetically</a></h3>
+				<pre>func (this SortableKey) SortAlphabetically() *Sorter</pre>
+				<p>
+SortAlphabetically will define a search in which redis sorts strings
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortableKey.SortNumerically">func (SortableKey) <a href="/target/sort.go?s=699:748#L12">SortNumerically</a></h3>
+				<pre>func (this SortableKey) SortNumerically() *Sorter</pre>
+				<p>
+SortNumerially will define a search in which redis sorts numbers
+</p>
+
+				
+				
+			
+		
+			
+			
+			<h2 id="SortedIntSet">type <a href="/target/sorted intset.go?s=247:288#L1">SortedIntSet</a></h2>
+			<pre>type SortedIntSet struct {
+    SortableKey
+}</pre>
+			<p>
+SortedIntSet is an object which implements the Redis ZSet Primitive assume all inputs are ints (which is useful for indexes)
+See <a href="http://redis.io/commands#sorted_set">http://redis.io/commands#sorted_set</a> for more info on ZSets
+</p>
+
+
+			
+
+			
+
+			
+
+			
+
+			
+				
+				<h3 id="SortedIntSet.Add">func (SortedIntSet) <a href="/target/sorted intset.go?s=801:866#L20">Add</a></h3>
+				<pre>func (this SortedIntSet) Add(item int, score float64) &lt;-chan bool</pre>
+				<p>
+ZADD command -
+Add adds an integer to a zset or updates its score if it already exists;
+returns true when adding, false when updating
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedIntSet.IncrementBy">func (SortedIntSet) <a href="/target/sorted intset.go?s=1052:1128#L27">IncrementBy</a></h3>
+				<pre>func (this SortedIntSet) IncrementBy(item int, score float64) &lt;-chan float64</pre>
+				<p>
+ZINCRBY command -
+IncrementBy adjusts the score of the member within the zset;
+returns the new score
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedIntSet.IndexOf">func (SortedIntSet) <a href="/target/sorted intset.go?s=1774:1827#L47">IndexOf</a></h3>
+				<pre>func (this SortedIntSet) IndexOf(item int) &lt;-chan int</pre>
+				<p>
+ZRANK command -
+IndexOf returns the index of a member.
+ie, the lowest ranked member would have an index of 0, and the next lowest an index of 1
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedIntSet.IndexedBetween">func (SortedIntSet) <a href="/target/sorted intset.go?s=2511:2580#L66">IndexedBetween</a></h3>
+				<pre>func (this SortedIntSet) IndexedBetween(start, stop int) &lt;-chan []int</pre>
+				<p>
+ZRANGE command -
+IndexedBetween returns a slice of all members between the indices
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedIntSet.IndexedBetweenWithScores">func (SortedIntSet) <a href="/target/sorted intset.go?s=3118:3207#L79">IndexedBetweenWithScores</a></h3>
+				<pre>func (this SortedIntSet) IndexedBetweenWithScores(start, stop int) &lt;-chan map[int]float64</pre>
+				<p>
+ZRANGE command -
+IndexedBetweenWithScores returns a map of all members between the indices and their associated scores
+(warning: golang maps are not ordered)
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedIntSet.IsValid">func (SortedIntSet) <a href="/target/sorted intset.go?s=508:554#L8">IsValid</a></h3>
+				<pre>func (this SortedIntSet) IsValid() &lt;-chan bool</pre>
+				<p>
+IsValid returns whether the underlying redis object can use the commands in this object
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedIntSet.Remove">func (SortedIntSet) <a href="/target/sorted intset.go?s=1342:1395#L34">Remove</a></h3>
+				<pre>func (this SortedIntSet) Remove(item int) &lt;-chan bool</pre>
+				<p>
+ZREM command -
+Remove removes a member from the zset if it is part of the set;
+returns whether or not it was part of the set
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedIntSet.RemoveIndexedBetween">func (SortedIntSet) <a href="/target/sorted intset.go?s=3839:3912#L93">RemoveIndexedBetween</a></h3>
+				<pre>func (this SortedIntSet) RemoveIndexedBetween(start, stop int) &lt;-chan int</pre>
+				<p>
+ZREMRANGERANK command -
+RemoveIndexedBetween removes all members between the indices.
+returns the number of members removed
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedIntSet.ReverseIndexOf">func (SortedIntSet) <a href="/target/sorted intset.go?s=2079:2139#L54">ReverseIndexOf</a></h3>
+				<pre>func (this SortedIntSet) ReverseIndexOf(item int) &lt;-chan int</pre>
+				<p>
+ZREVRANK command -
+ReverseIndexOf returns the reverse index of a member.
+ie, the highest ranked member would have an reverse index of 0, and the next highest an reverse index of 1
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedIntSet.ReverseIndexedBetween">func (SortedIntSet) <a href="/target/sorted intset.go?s=2780:2856#L72">ReverseIndexedBetween</a></h3>
+				<pre>func (this SortedIntSet) ReverseIndexedBetween(start, stop int) &lt;-chan []int</pre>
+				<p>
+ZREVRANGE command -
+ReverseIndexedBetween returns a slice of all members between the reverse indices
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedIntSet.ReverseIndexedBetweenWithScores">func (SortedIntSet) <a href="/target/sorted intset.go?s=3496:3592#L86">ReverseIndexedBetweenWithScores</a></h3>
+				<pre>func (this SortedIntSet) ReverseIndexedBetweenWithScores(start, stop int) &lt;-chan map[int]float64</pre>
+				<p>
+ZREVRANGE command -
+IndexedBetweenWithScores returns a map of all members between the reverse indices and their associated scores
+(warning: golang maps are not ordered)
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedIntSet.ScoreOf">func (SortedIntSet) <a href="/target/sorted intset.go?s=2298:2355#L60">ScoreOf</a></h3>
+				<pre>func (this SortedIntSet) ScoreOf(item int) &lt;-chan float64</pre>
+				<p>
+ZSCORE command -
+ScoreOf returns the score associated with a given member of the zset
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedIntSet.Scores">func (SortedIntSet) <a href="/target/sorted intset.go?s=4306:4358#L109">Scores</a></h3>
+				<pre>func (this SortedIntSet) Scores() *SortedIntSetRange</pre>
+				<p>
+Scores createa a SortedIntSetRange to help narrow a search to be done later
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedIntSet.Size">func (SortedIntSet) <a href="/target/sorted intset.go?s=1528:1570#L40">Size</a></h3>
+				<pre>func (this SortedIntSet) Size() &lt;-chan int</pre>
+				<p>
+ZCARD command -
+Size returns the number of members of the zset
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedIntSet.StoreIntersection">func (SortedIntSet) <a href="/target/sorted intset.go?s=8277:8340#L248">StoreIntersection</a></h3>
+				<pre>func (this SortedIntSet) StoreIntersection() *SortedIntSetCombo</pre>
+				<p>
+ZINTERSTORE command -
+StoreIntersection sets up a combo that will be an intersection of other zsets
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedIntSet.StoreUnion">func (SortedIntSet) <a href="/target/sorted intset.go?s=8041:8097#L239">StoreUnion</a></h3>
+				<pre>func (this SortedIntSet) StoreUnion() *SortedIntSetCombo</pre>
+				<p>
+ZUNIONSTORE command -
+StoreUnion sets up a combo that will be a union of other zsets
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedIntSet.Use">func (SortedIntSet) <a href="/target/sorted intset.go?s=10170:10227#L313">Use</a></h3>
+				<pre>func (this SortedIntSet) Use(e SafeExecutor) SortedIntSet</pre>
+				<p>
+Use allows you to use this key on a different executor
+</p>
+
+				
+				
+			
+		
+			
+			
+			<h2 id="SortedIntSetCombo">type <a href="/target/sorted intset.go?s=7815:7950#L229">SortedIntSetCombo</a></h2>
+			<pre>type SortedIntSetCombo struct {
+    <span class="comment">// contains filtered or unexported fields</span>
+}</pre>
+			<p>
+SortedIntSetCombo keeps track of how you want to be combining multiple zsets
+</p>
+
+
+			
+
+			
+
+			
+
+			
+
+			
+				
+				<h3 id="SortedIntSetCombo.OfSet">func (*SortedIntSetCombo) <a href="/target/sorted intset.go?s=8449:8527#L256">OfSet</a></h3>
+				<pre>func (this *SortedIntSetCombo) OfSet(otherSet SortedIntSet) *SortedIntSetCombo</pre>
+				<p>
+OfSet adds a zset to the combo
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedIntSetCombo.OfWeightedSet">func (*SortedIntSetCombo) <a href="/target/sorted intset.go?s=8748:8850#L265">OfWeightedSet</a></h3>
+				<pre>func (this *SortedIntSetCombo) OfWeightedSet(otherSet SortedIntSet, weight float64) *SortedIntSetCombo</pre>
+				<p>
+OfWeightedSet adds a zset to the combo, and weights it to be either heavier or lighter than other zsets
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedIntSetCombo.UseCombinedScores">func (*SortedIntSetCombo) <a href="/target/sorted intset.go?s=9519:9580#L285">UseCombinedScores</a></h3>
+				<pre>func (this *SortedIntSetCombo) UseCombinedScores() &lt;-chan int</pre>
+				<p>
+UseCombinedScores combines the zsets, and when duplicates are found, will add the scores together
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedIntSetCombo.UseHigherScore">func (*SortedIntSetCombo) <a href="/target/sorted intset.go?s=9305:9363#L280">UseHigherScore</a></h3>
+				<pre>func (this *SortedIntSetCombo) UseHigherScore() &lt;-chan int</pre>
+				<p>
+UseHigherScore combines the zsets, and when duplicates are found, will keep the highest score found
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedIntSetCombo.UseLowerScore">func (*SortedIntSetCombo) <a href="/target/sorted intset.go?s=9090:9147#L275">UseLowerScore</a></h3>
+				<pre>func (this *SortedIntSetCombo) UseLowerScore() &lt;-chan int</pre>
+				<p>
+UseLowerScore combines the zsets, and when duplicates are found, will keep the lowest score found
+</p>
+
+				
+				
+			
+		
+			
+			
+			<h2 id="SortedIntSetRange">type <a href="/target/sorted intset.go?s=4079:4226#L98">SortedIntSetRange</a></h2>
+			<pre>type SortedIntSetRange struct {
+    <span class="comment">// contains filtered or unexported fields</span>
+}</pre>
+			<p>
+SortedIntSetRange keeps track of all range arguments being used in a search
+</p>
+
+
+			
+
+			
+
+			
+
+			
+
+			
+				
+				<h3 id="SortedIntSetRange.Above">func (*SortedIntSetRange) <a href="/target/sorted intset.go?s=4505:4573#L118">Above</a></h3>
+				<pre>func (this *SortedIntSetRange) Above(min float64) *SortedIntSetRange</pre>
+				<p>
+Above limits results to members who have a score above &#34;min&#34;
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedIntSetRange.AboveOrEqualTo">func (*SortedIntSetRange) <a href="/target/sorted intset.go?s=5016:5093#L136">AboveOrEqualTo</a></h3>
+				<pre>func (this *SortedIntSetRange) AboveOrEqualTo(min float64) *SortedIntSetRange</pre>
+				<p>
+AboveOrEqualTo limits results to members who have a score above or equal to &#34;min&#34;
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedIntSetRange.Below">func (*SortedIntSetRange) <a href="/target/sorted intset.go?s=4750:4818#L127">Below</a></h3>
+				<pre>func (this *SortedIntSetRange) Below(max float64) *SortedIntSetRange</pre>
+				<p>
+Below limits results to members who have a score below &#34;max&#34;
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedIntSetRange.BelowOrEqualTo">func (*SortedIntSetRange) <a href="/target/sorted intset.go?s=5284:5361#L145">BelowOrEqualTo</a></h3>
+				<pre>func (this *SortedIntSetRange) BelowOrEqualTo(max float64) *SortedIntSetRange</pre>
+				<p>
+BelowOrEqualTo limits results to members who have a score below or equal to &#34;max&#34;
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedIntSetRange.Count">func (*SortedIntSetRange) <a href="/target/sorted intset.go?s=6172:6221#L171">Count</a></h3>
+				<pre>func (this *SortedIntSetRange) Count() &lt;-chan int</pre>
+				<p>
+ZCOUNT command -
+Count returns the number of members that fit in the search criteria
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedIntSetRange.Get">func (*SortedIntSetRange) <a href="/target/sorted intset.go?s=6699:6748#L184">Get</a></h3>
+				<pre>func (this *SortedIntSetRange) Get() &lt;-chan []int</pre>
+				<p>
+ZRANGEBYSCORE or ZREVRANGEBYSCORE command -
+Get returns a list of all members fitting the search criteria
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedIntSetRange.GetWithScores">func (*SortedIntSetRange) <a href="/target/sorted intset.go?s=7267:7336#L206">GetWithScores</a></h3>
+				<pre>func (this *SortedIntSetRange) GetWithScores() &lt;-chan map[int]float64</pre>
+				<p>
+ZRANGEBYSCORE or ZREVRANGEBYSCORE command -
+GetWithScores returns a map with all members fitting the search criteria and their associated scores
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedIntSetRange.Limit">func (*SortedIntSetRange) <a href="/target/sorted intset.go?s=5927:6001#L162">Limit</a></h3>
+				<pre>func (this *SortedIntSetRange) Limit(offset, count int) *SortedIntSetRange</pre>
+				<p>
+Limit limits the results you get back - it skips the first &#34;offset&#34; results, and then only returns the next &#34;offset&#34;
+This only useful if getting or getting with scores, not useful for counting or removing
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedIntSetRange.Remove">func (*SortedIntSetRange) <a href="/target/sorted intset.go?s=6446:6496#L178">Remove</a></h3>
+				<pre>func (this *SortedIntSetRange) Remove() &lt;-chan int</pre>
+				<p>
+ZREMRANGEBYSCORE command -
+Remove removes all members that fit the search criteria from the zset;
+returns the number of members removed
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedIntSetRange.Reversed">func (*SortedIntSetRange) <a href="/target/sorted intset.go?s=5607:5667#L155">Reversed</a></h3>
+				<pre>func (this *SortedIntSetRange) Reversed() *SortedIntSetRange</pre>
+				<p>
+Reversed returns the results in reverse order.
+This only useful if getting or getting with scores, not useful for counting or removing
+</p>
+
+				
+				
+			
+		
+			
+			
+			<h2 id="SortedSet">type <a href="/target/sorted set.go?s=15:53#L1">SortedSet</a></h2>
+			<pre>type SortedSet struct {
+    SortableKey
+}</pre>
+			
+
+			
+
+			
+
+			
+
+			
+
+			
+				
+				<h3 id="SortedSet.Add">func (SortedSet) <a href="/target/sorted set.go?s=552:617#L16">Add</a></h3>
+				<pre>func (this SortedSet) Add(item string, score float64) &lt;-chan bool</pre>
+				<p>
+ZADD command -
+Add adds a member to a zset or updates its score if it already exists;
+returns true when adding, false when updating
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedSet.IncrementBy">func (SortedSet) <a href="/target/sorted set.go?s=798:874#L23">IncrementBy</a></h3>
+				<pre>func (this SortedSet) IncrementBy(item string, score float64) &lt;-chan float64</pre>
+				<p>
+ZINCRBY command -
+IncrementBy adjusts the score of the member within the zset;
+returns the new score
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedSet.IndexOf">func (SortedSet) <a href="/target/sorted set.go?s=1508:1561#L43">IndexOf</a></h3>
+				<pre>func (this SortedSet) IndexOf(item string) &lt;-chan int</pre>
+				<p>
+ZRANK command -
+IndexOf returns the index of a member.
+ie, the lowest ranked member would have an index of 0, and the next lowest an index of 1
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedSet.IndexedBetween">func (SortedSet) <a href="/target/sorted set.go?s=2230:2299#L62">IndexedBetween</a></h3>
+				<pre>func (this SortedSet) IndexedBetween(start, stop int) &lt;-chan []string</pre>
+				<p>
+ZRANGE command -
+IndexedBetween returns a slice of all members between the indices
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedSet.IndexedBetweenWithScores">func (SortedSet) <a href="/target/sorted set.go?s=2813:2902#L75">IndexedBetweenWithScores</a></h3>
+				<pre>func (this SortedSet) IndexedBetweenWithScores(start, stop int) &lt;-chan map[string]float64</pre>
+				<p>
+ZRANGE command -
+IndexedBetweenWithScores returns a map of all members between the indices and their associated scores
+(warning: golang maps are not ordered)
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedSet.IsValid">func (SortedSet) <a href="/target/sorted set.go?s=264:307#L4">IsValid</a></h3>
+				<pre>func (this SortedSet) IsValid() &lt;-chan bool</pre>
+				<p>
+IsValid returns whether the underlying redis object can use the commands in this object
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedSet.Remove">func (SortedSet) <a href="/target/sorted set.go?s=1083:1136#L30">Remove</a></h3>
+				<pre>func (this SortedSet) Remove(item string) &lt;-chan bool</pre>
+				<p>
+ZREM command -
+Remove removes a member from the zset if it is part of the set;
+returns whether or not it was part of the set
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedSet.RemoveIndexedBetween">func (SortedSet) <a href="/target/sorted set.go?s=3544:3614#L89">RemoveIndexedBetween</a></h3>
+				<pre>func (this SortedSet) RemoveIndexedBetween(start, stop int) &lt;-chan int</pre>
+				<p>
+ZREMRANGEBYRANK command -
+RemoveIndexedBetween removes all members between the indices;
+returns the number of members removed
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedSet.ReverseIndexOf">func (SortedSet) <a href="/target/sorted set.go?s=1808:1868#L50">ReverseIndexOf</a></h3>
+				<pre>func (this SortedSet) ReverseIndexOf(item string) &lt;-chan int</pre>
+				<p>
+ZREVRANK command -
+ReverseIndexOf returns the reverse index of a member.
+ie, the highest ranked member would have an reverse index of 0, and the next highest an reverse index of 1
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedSet.ReverseIndexedBetween">func (SortedSet) <a href="/target/sorted set.go?s=2487:2563#L68">ReverseIndexedBetween</a></h3>
+				<pre>func (this SortedSet) ReverseIndexedBetween(start, stop int) &lt;-chan []string</pre>
+				<p>
+ZREVRANGE command -
+ReverseIndexedBetween returns a slice of all members between the reverse indices
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedSet.ReverseIndexedBetweenWithScores">func (SortedSet) <a href="/target/sorted set.go?s=3195:3291#L82">ReverseIndexedBetweenWithScores</a></h3>
+				<pre>func (this SortedSet) ReverseIndexedBetweenWithScores(start, stop int) &lt;-chan map[string]float64</pre>
+				<p>
+ZREVRANGE command -
+IndexedBetweenWithScores returns a map of all members between the reverse indices and their associated scores
+(warning: golang maps are not ordered)
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedSet.ScoreOf">func (SortedSet) <a href="/target/sorted set.go?s=2022:2079#L56">ScoreOf</a></h3>
+				<pre>func (this SortedSet) ScoreOf(item string) &lt;-chan float64</pre>
+				<p>
+ZSCORE command -
+ScoreOf returns the score associated with a given member of the zset
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedSet.Scores">func (SortedSet) <a href="/target/sorted set.go?s=3999:4045#L105">Scores</a></h3>
+				<pre>func (this SortedSet) Scores() *SortedSetRange</pre>
+				<p>
+Scores createa a SortedSetRange to help narrow a search to be done later
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedSet.Size">func (SortedSet) <a href="/target/sorted set.go?s=1264:1303#L36">Size</a></h3>
+				<pre>func (this SortedSet) Size() &lt;-chan int</pre>
+				<p>
+ZCARD command -
+Size returns the number of members of the zset
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedSet.StoreIntersection">func (SortedSet) <a href="/target/sorted set.go?s=7901:7958#L244">StoreIntersection</a></h3>
+				<pre>func (this SortedSet) StoreIntersection() *SortedSetCombo</pre>
+				<p>
+ZINTERSTORE command -
+StoreIntersection sets up a combo that will be an intersection of other zsets
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedSet.StoreUnion">func (SortedSet) <a href="/target/sorted set.go?s=7673:7723#L235">StoreUnion</a></h3>
+				<pre>func (this SortedSet) StoreUnion() *SortedSetCombo</pre>
+				<p>
+ZUNIONSTORE command
+StoreUnion sets up a combo that will be a union of other zsets
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedSet.Use">func (SortedSet) <a href="/target/sorted set.go?s=9755:9806#L309">Use</a></h3>
+				<pre>func (this SortedSet) Use(e SafeExecutor) SortedSet</pre>
+				<p>
+Use allows you to use this key on a different executor
+</p>
+
+				
+				
+			
+		
+			
+			
+			<h2 id="SortedSetCombo">type <a href="/target/sorted set.go?s=7452:7584#L225">SortedSetCombo</a></h2>
+			<pre>type SortedSetCombo struct {
+    <span class="comment">// contains filtered or unexported fields</span>
+}</pre>
+			<p>
+SortedSetCombo keeps track of how you want to be combining multiple zsets
+</p>
+
+
+			
+
+			
+
+			
+
+			
+
+			
+				
+				<h3 id="SortedSetCombo.OfSet">func (*SortedSetCombo) <a href="/target/sorted set.go?s=8064:8133#L252">OfSet</a></h3>
+				<pre>func (this *SortedSetCombo) OfSet(otherSet SortedSet) *SortedSetCombo</pre>
+				<p>
+OfSet adds a zset to the combo
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedSetCombo.OfWeightedSet">func (*SortedSetCombo) <a href="/target/sorted set.go?s=8354:8447#L261">OfWeightedSet</a></h3>
+				<pre>func (this *SortedSetCombo) OfWeightedSet(otherSet SortedSet, weight float64) *SortedSetCombo</pre>
+				<p>
+OfWeightedSet adds a zset to the combo, and weights it to be either heavier or lighter than other zsets
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedSetCombo.UseCombinedScores">func (*SortedSetCombo) <a href="/target/sorted set.go?s=9110:9168#L281">UseCombinedScores</a></h3>
+				<pre>func (this *SortedSetCombo) UseCombinedScores() &lt;-chan int</pre>
+				<p>
+UseCombinedScores combines the zsets, and when duplicates are found, will add the scores together
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedSetCombo.UseHigherScore">func (*SortedSetCombo) <a href="/target/sorted set.go?s=8899:8954#L276">UseHigherScore</a></h3>
+				<pre>func (this *SortedSetCombo) UseHigherScore() &lt;-chan int</pre>
+				<p>
+UseHigherScore combines the zsets, and when duplicates are found, will keep the highest score found
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedSetCombo.UseLowerScore">func (*SortedSetCombo) <a href="/target/sorted set.go?s=8687:8741#L271">UseLowerScore</a></h3>
+				<pre>func (this *SortedSetCombo) UseLowerScore() &lt;-chan int</pre>
+				<p>
+UseLowerScore combines the zsets, and when duplicates are found, will keep the lowest score found
+</p>
+
+				
+				
+			
+		
+			
+			
+			<h2 id="SortedSetRange">type <a href="/target/sorted set.go?s=3778:3922#L94">SortedSetRange</a></h2>
+			<pre>type SortedSetRange struct {
+    <span class="comment">// contains filtered or unexported fields</span>
+}</pre>
+			<p>
+SortedSetRange keeps track of all range arguments being used in a search
+</p>
+
+
+			
+
+			
+
+			
+
+			
+
+			
+				
+				<h3 id="SortedSetRange.Above">func (*SortedSetRange) <a href="/target/sorted set.go?s=4189:4251#L114">Above</a></h3>
+				<pre>func (this *SortedSetRange) Above(min float64) *SortedSetRange</pre>
+				<p>
+Above limits results to members who have a score above &#34;min&#34;
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedSetRange.AboveOrEqualTo">func (*SortedSetRange) <a href="/target/sorted set.go?s=4688:4759#L132">AboveOrEqualTo</a></h3>
+				<pre>func (this *SortedSetRange) AboveOrEqualTo(min float64) *SortedSetRange</pre>
+				<p>
+AboveOrEqualTo limits results to members who have a score above or equal to &#34;min&#34;
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedSetRange.Below">func (*SortedSetRange) <a href="/target/sorted set.go?s=4428:4490#L123">Below</a></h3>
+				<pre>func (this *SortedSetRange) Below(max float64) *SortedSetRange</pre>
+				<p>
+Below limits results to members who have a score below &#34;max&#34;
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedSetRange.BelowOrEqualTo">func (*SortedSetRange) <a href="/target/sorted set.go?s=4950:5021#L141">BelowOrEqualTo</a></h3>
+				<pre>func (this *SortedSetRange) BelowOrEqualTo(max float64) *SortedSetRange</pre>
+				<p>
+BelowOrEqualTo limits results to members who have a score below or equal to &#34;max&#34;
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedSetRange.Count">func (*SortedSetRange) <a href="/target/sorted set.go?s=5828:5874#L167">Count</a></h3>
+				<pre>func (this *SortedSetRange) Count() &lt;-chan int</pre>
+				<p>
+ZCOUNT command -
+Count returns the number of members that fit in the search criteria
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedSetRange.Get">func (*SortedSetRange) <a href="/target/sorted set.go?s=6348:6397#L180">Get</a></h3>
+				<pre>func (this *SortedSetRange) Get() &lt;-chan []string</pre>
+				<p>
+ZRANGEBYSCORE or ZREVRANGEBYSCORE command
+Get returns a list of all members fitting the search criteria
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedSetRange.GetWithScores">func (*SortedSetRange) <a href="/target/sorted set.go?s=6904:6973#L202">GetWithScores</a></h3>
+				<pre>func (this *SortedSetRange) GetWithScores() &lt;-chan map[string]float64</pre>
+				<p>
+ZRANGEBYSCORE or ZREVRANGEBYSCORE command -
+GetWithScores returns a map with all members fitting the search criteria and their associated scores
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedSetRange.Limit">func (*SortedSetRange) <a href="/target/sorted set.go?s=5588:5656#L158">Limit</a></h3>
+				<pre>func (this *SortedSetRange) Limit(offset, count int) *SortedSetRange</pre>
+				<p>
+Limit limits the results you get back - it skips the first &#34;offset&#34; results, and then only returns the next &#34;offset&#34;.
+This is only useful if getting or getting with scores, not useful for counting or removing
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedSetRange.Remove">func (*SortedSetRange) <a href="/target/sorted set.go?s=6100:6147#L174">Remove</a></h3>
+				<pre>func (this *SortedSetRange) Remove() &lt;-chan int</pre>
+				<p>
+ZREMRANGEBYSCORE command -
+Remove removes all members that fit the search criteria from the zset;
+returns the number of members removed
+</p>
+
+				
+				
+			
+				
+				<h3 id="SortedSetRange.Reversed">func (*SortedSetRange) <a href="/target/sorted set.go?s=5270:5324#L151">Reversed</a></h3>
+				<pre>func (this *SortedSetRange) Reversed() *SortedSetRange</pre>
+				<p>
+Reversed returns the results in reverse order.
+This is only useful if getting or getting with scores, not useful for counting or removing
+</p>
+
+				
+				
+			
+		
+			
+			
+			<h2 id="Sorter">type <a href="/target/sort.go?s=1031:1172#L33">Sorter</a></h2>
+			<pre>type Sorter struct {
+    <span class="comment">// contains filtered or unexported fields</span>
+}</pre>
+			<p>
+Sorter keeps track of the options you want to use to sort with
+</p>
+
+
+			
+
+			
+
+			
+
+			
+
+			
+				
+				<h3 id="Sorter.By">func (*Sorter) <a href="/target/sort.go?s=2375:2421#L82">By</a></h3>
+				<pre>func (this *Sorter) By(pattern string) *Sorter</pre>
+				<p>
+By allows you to use the current key as an index into a different set of keys
+</p>
+<p>
+Example: If you have a Set with {1,2,3,4,5}, and you sort By(&#34;string_*&#34;), you will sort whatever string primitives are at string_1, string_2, string_3, string_4, and string_5
+</p>
+
+				
+				
+			
+				
+				<h3 id="Sorter.Get">func (*Sorter) <a href="/target/sort.go?s=3053:3094#L112">Get</a></h3>
+				<pre>func (this *Sorter) Get() &lt;-chan []string</pre>
+				<p>
+Get will execute the search specified and return the result as a slice of strings
+</p>
+
+				
+				
+			
+				
+				<h3 id="Sorter.GetFloats">func (*Sorter) <a href="/target/sort.go?s=3435:3483#L122">GetFloats</a></h3>
+				<pre>func (this *Sorter) GetFloats() &lt;-chan []float64</pre>
+				<p>
+GetFloats will execute the search specified and return the result as a slice of Floats
+</p>
+
+				
+				
+			
+				
+				<h3 id="Sorter.GetFloatsFrom">func (*Sorter) <a href="/target/sort.go?s=4457:4524#L141">GetFloatsFrom</a></h3>
+				<pre>func (this *Sorter) GetFloatsFrom(pattern string) &lt;-chan []*float64</pre>
+				<p>
+GetFrom will execute the search, but instead of returning the results, will use the results to dig into other string primitives containing (hopefully) floating point numbers.
+It is the equivalent of using a GET argument in the sort
+</p>
+
+				
+				
+			
+				
+				<h3 id="Sorter.GetFrom">func (*Sorter) <a href="/target/sort.go?s=3713:3773#L128">GetFrom</a></h3>
+				<pre>func (this *Sorter) GetFrom(pattern string) &lt;-chan []*string</pre>
+				<p>
+GetFrom will execute the search, but instead of returning the results, will use the results to dig into other string primitives.
+It is the equivalent of using a GET argument in the sort
+</p>
+
+				
+				
+			
+				
+				<h3 id="Sorter.GetFromAndStoreIn">func (*Sorter) <a href="/target/sort.go?s=5281:5356#L160">GetFromAndStoreIn</a></h3>
+				<pre>func (this *Sorter) GetFromAndStoreIn(pattern string, dest List) &lt;-chan int</pre>
+				<p>
+GetFromAndStoreIn is like using both GetFrom and StoreStrings
+</p>
+
+				
+				
+			
+				
+				<h3 id="Sorter.GetInts">func (*Sorter) <a href="/target/sort.go?s=3266:3308#L117">GetInts</a></h3>
+				<pre>func (this *Sorter) GetInts() &lt;-chan []int</pre>
+				<p>
+GetInts will execute the search specified and return the result as a slice of integers
+</p>
+
+				
+				
+			
+				
+				<h3 id="Sorter.GetIntsFrom">func (*Sorter) <a href="/target/sort.go?s=4106:4167#L135">GetIntsFrom</a></h3>
+				<pre>func (this *Sorter) GetIntsFrom(pattern string) &lt;-chan []*int</pre>
+				<p>
+GetFrom will execute the search, but instead of returning the results, will use the results to dig into other string primitives containing (hopefully) integers.
+It is the equivalent of using a GET argument in the sort
+</p>
+
+				
+				
+			
+				
+				<h3 id="Sorter.GetIntsFromAndStoreIn">func (*Sorter) <a href="/target/sort.go?s=5480:5562#L165">GetIntsFromAndStoreIn</a></h3>
+				<pre>func (this *Sorter) GetIntsFromAndStoreIn(pattern string, dest IntList) &lt;-chan int</pre>
+				<p>
+GetIntsFromAndStoreIn is like using both GetIntsFrom and StoreInts
+</p>
+
+				
+				
+			
+				
+				<h3 id="Sorter.Limit">func (*Sorter) <a href="/target/sort.go?s=1980:2032#L71">Limit</a></h3>
+				<pre>func (this *Sorter) Limit(offset, count int) *Sorter</pre>
+				<p>
+Limit defines the total number of results you want to receive back.
+It will skip the first &#34;offset&#34; results, and then only show you the next &#34;count&#34; results.
+</p>
+<p>
+Example: If you want to see the top 3 results, you would use field.SortNumerically().Limit(0,3)
+</p>
+
+				
+				
+			
+				
+				<h3 id="Sorter.Reverse">func (*Sorter) <a href="/target/sort.go?s=2881:2918#L106">Reverse</a></h3>
+				<pre>func (this *Sorter) Reverse() *Sorter</pre>
+				<p>
+Reverse will invert the order that you receive the results in
+</p>
+<p>
+Example: field.SortNumerically().Reverse() will define a descending search rather than an ascending one
+</p>
+
+				
+				
+			
+				
+				<h3 id="Sorter.StoreInts">func (*Sorter) <a href="/target/sort.go?s=5058:5112#L154">StoreInts</a></h3>
+				<pre>func (this *Sorter) StoreInts(dest IntList) &lt;-chan int</pre>
+				<p>
+StoreInts will execute the sort, but instead of returning the results will store them in a list primitive.
+It is the equivalent of using a STORE argument
+</p>
+
+				
+				
+			
+				
+				<h3 id="Sorter.StoreStrings">func (*Sorter) <a href="/target/sort.go?s=4741:4795#L147">StoreStrings</a></h3>
+				<pre>func (this *Sorter) StoreStrings(dest List) &lt;-chan int</pre>
+				<p>
+StoreStrings will execute the sort, but instead of returning the results will store them in a list primitive.
+It is the equivalent of using a STORE argument
+</p>
+
+				
+				
+			
+		
+			
+			
+			<h2 id="String">type <a href="/target/string.go?s=85:112#L1">String</a></h2>
+			<pre>type String struct {
+    Key
+}</pre>
+			<p>
+String is an object which implements a basic Redis String primitive
+</p>
+
+
+			
+
+			
+
+			
+
+			
+
+			
+				
+				<h3 id="String.Append">func (String) <a href="/target/string.go?s=1361:1409#L42">Append</a></h3>
+				<pre>func (this String) Append(val string) &lt;-chan int</pre>
+				<p>
+APPEND command -
+Append appends the value to the end of the key
+</p>
+
+				
+				
+			
+				
+				<h3 id="String.Get">func (String) <a href="/target/string.go?s=1002:1040#L30">Get</a></h3>
+				<pre>func (this String) Get() &lt;-chan string</pre>
+				<p>
+GET command -
+Get returns the value of the key
+</p>
+
+				
+				
+			
+				
+				<h3 id="String.IsValid">func (String) <a href="/target/string.go?s=306:346#L5">IsValid</a></h3>
+				<pre>func (this String) IsValid() &lt;-chan bool</pre>
+				<p>
+IsValid returns whether the underlying redis object can use the commands in this object
+</p>
+
+				
+				
+			
+				
+				<h3 id="String.Length">func (String) <a href="/target/string.go?s=1555:1593#L48">Length</a></h3>
+				<pre>func (this String) Length() &lt;-chan int</pre>
+				<p>
+STRLEN command -
+Length returns the number of characters in the value of the key
+</p>
+
+				
+				
+			
+				
+				<h3 id="String.Replace">func (String) <a href="/target/string.go?s=1177:1229#L36">Replace</a></h3>
+				<pre>func (this String) Replace(val string) &lt;-chan string</pre>
+				<p>
+GETSET command -
+Replace sets the value of the key and returns its old value
+</p>
+
+				
+				
+			
+				
+				<h3 id="String.Set">func (String) <a href="/target/string.go?s=588:637#L17">Set</a></h3>
+				<pre>func (this String) Set(val string) &lt;-chan nothing</pre>
+				<p>
+SET command -
+Set sets the value of the key or updates it if it already exists;
+returns true if setting, false if updating
+</p>
+
+				
+				
+			
+				
+				<h3 id="String.SetIfEmpty">func (String) <a href="/target/string.go?s=837:890#L24">SetIfEmpty</a></h3>
+				<pre>func (this String) SetIfEmpty(val string) &lt;-chan bool</pre>
+				<p>
+SETNX command -
+SetIfEmpty sets the value of the key, but does nothing if it already exists;
+returns true if setting, false if skipping
+</p>
+
+				
+				
+			
+				
+				<h3 id="String.Use">func (String) <a href="/target/string.go?s=1705:1750#L53">Use</a></h3>
+				<pre>func (this String) Use(e SafeExecutor) String</pre>
+				<p>
+Use allows you to use this key on a different executor
+</p>
+
+				
+				
+			
+		
+		</div>
+	
+
+	
+
+
+
+
+
+
+

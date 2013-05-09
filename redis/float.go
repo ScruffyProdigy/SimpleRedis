@@ -22,31 +22,37 @@ func (this Float) IsValid() <-chan bool {
 	return c
 }
 
+//SET command - 
 //Set sets the object to a specific floating point value
 func (this Float) Set(val float64) <-chan nothing {
 	return NilCommand(this, this.args("set", ftoa(val))...)
 }
 
-//SetIfEmpty sets the object to a specfic floating point value, but only if the 
+//SETNX command - 
+//SetIfEmpty sets the object to a specfic floating point value, but only if it was empty beforehand
 func (this Float) SetIfEmpty(val float64) <-chan bool {
 	return BoolCommand(this, this.args("setnx", ftoa(val))...)
 }
 
+//GET command - 
 //Get gets the floating point value stored in the object
 func (this Float) Get() <-chan float64 {
 	return FloatCommand(this, this.args("get")...)
 }
 
+//GETSET command - 
 //GetSet gets the current floating point value stored in an object, and sets the value to a new one
 func (this Float) GetSet(val float64) <-chan float64 {
 	return FloatCommand(this, this.args("getset", ftoa(val))...)
 }
 
+//INCRBYFLOAT command - 
 //IncrementBy increments the floating point value stored in an object by a set amount and returns the new amount
 func (this Float) IncrementBy(val float64) <-chan float64 {
 	return FloatCommand(this, this.args("incrbyfloat", ftoa(val))...)
 }
 
+//INCRBYFLOAT command - 
 //DecrementBy decreases the floating point value stored in an object by a set amount and returns the new amount
 func (this Float) DecrementBy(val float64) <-chan float64 {
 	return FloatCommand(this, this.args("incrbyfloat", ftoa(-val))...)

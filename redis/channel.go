@@ -9,7 +9,7 @@ const (
 	messageBufferSize = 64
 )
 
-//A Channel is object that encapsulates the Pub/Sub redis commands
+//A Channel is object that encapsulates the Pub/Sub redis commands.
 //See http://redis.io/topics/pubsub for more information on redis Pub/Sub
 type Channel struct {
 	Key
@@ -83,15 +83,15 @@ func (this Channel) subscribe(action func(string), sub, unsub string) (startSign
 	return happened, &subsc
 }
 
-//Subscribe calls the specified function whenever a message along this channel is published
-//it returns a channel that allows you to know when the channel has started succesfully listening
+//Subscribe calls the specified function whenever a message along this channel is published. 
+//It returns a channel that allows you to know when the channel has started succesfully listening, 
 //and a way to signal when you're done listening
 func (this Channel) Subscribe(action func(string)) (startSignal <-chan nothing, finishSignaler io.Closer) {
 	return this.subscribe(action, "subscribe", "unsubscribe")
 }
 
-//PatternSubscribe calls the specified function whenever a message along any of the channels that fit the pattern is published
-//it returns a channel that allows you to know when the channel has started succesfully listening
+//PatternSubscribe calls the specified function whenever a message along any of the channels that fit the pattern is published.
+//It returns a channel that allows you to know when the channel has started succesfully listening,
 //and a way to signal when you're done listening
 func (this Channel) PatternSubscribe(action func(string)) (startSignal <-chan nothing, finishSignaler io.Closer) {
 	return this.subscribe(action, "psubscribe", "punsubscribe")
@@ -110,19 +110,19 @@ func (this Channel) blockingSubscription(subscription func(<-chan string), sub, 
 	})
 }
 
-//BlockingSubscription sends a message through a go channel whenever a message has been published on this redis channel
-//when the function terminates, the subscription is canceled
+//BlockingSubscription sends a message through a go channel whenever a message has been published on this redis channel. 
+//When the function terminates, the subscription is canceled
 func (this Channel) BlockingSubscription(subscription func(<-chan string)) {
 	this.blockingSubscription(subscription, "subscribe", "unsubscribe")
 }
 
-//BlockingPatternSubscription sends a message through a go channel whenever a message is published on any redis channel that fits the pattern
-//when the function terminates, the subscription is canceled
+//BlockingPatternSubscription sends a message through a go channel whenever a message is published on any redis channel that fits the pattern.
+//When the function terminates, the subscription is canceled
 func (this Channel) BlockingPatternSubscription(subscription func(<-chan string)) {
 	this.blockingSubscription(subscription, "psubscribe", "punsubscribe")
 }
 
-//Publish publishes a message on this channel
+//Publish publishes a message on this channel.
 //Use Subscribe, PatternSubscribe, BlockingSubscription, or BlockingPatternSubscription to receive the published message
 func (this Channel) Publish(message string) <-chan int {
 	return IntCommand(this, this.args("publish", message)...)

@@ -1,86 +1,3 @@
-/*
-SimpleRedis is an object-oriented Redis library for golang
-
-There are a couple of differences between this library and others.
-
-1) It is object oriented.
-
-In most libraries, You have something along the lines of:
-
-        Redis.Set("Test_String","Hello World")
-        str := Redis.Get("Test_String")
-	
-In this one, instead of calling the functions directly, you use:
-
-        s := Redis.String("Test_String")
-        <-s.Set("Hello World")
-        str := <-s.Get()
-	
-This accomplishes a few things:
-
-.a) By Default, the "Test_String" only gets defined in one place, so there are fewer chances for mistyping errors
-
-.b) It becomes easier to look up which operations are usable for different types of data
-
-.c) It more accurately models how one tends to think about the data, which is typically in terms of the Redis primitives rather than the functions
-	
-If you do need to call the functions directly, You can call any of the "Command" functions in command.go
-
-2) It uses channels
-
-While Redis is blazing fast, it *still* has to use network I/O, and often times there will be things you can do while that is happening
-
-"s.Get()" returns a channel, which, when Redis has returned information, will contain a string.  If you want the data immediately, you should use "`str := <-s.Get()`"
-
-The reasons for doing this are:
-
-.a) Helps to remind you that you can do things while waiting for Redis
-
-.b) Some operations (e.g. anything sent within a transaction) don't return immediately, and the result can only be obtained by waiting
-
-.c) Gives a natural interface for dealing with situations when Redis won't return anything (e.g. Popping from an empty List - "str,ok := <-l.LeftPop()")
-
-.d) Makes it easier to control when you pause for Redis
-
-*** Usage ***
-
-1) Figure out how you plan on connecting to Redis, and get a Config object set up properly
-
-2) Use the Config to create a Client object
-
-.a) You will probably make this object global
-
-.b) if not, make sure any object that needs to define Redis Objects has access to it
-
-3) Create methods for your objects that return Redis Objects
-
-.a) defining a Redis Object is a very lightweight operation, you should not need to be worried about the overhead
-
-.b) these methods should probably be private
-
-		func (u *User) base() Redis.Prefix {
-		//namespacing everything from within the user to help prevent clashes
-		    return global.Redis.Prefix("User:"+u.id+":")
-		}
-
-		func (u *User) friends() Redis.IntSet {
-		    return u.base().IntSet("Friends")
-		}
-
-4) Create methods that interact with these objects
-.a) these methods will probably be public
-
-		//note: not using the channel arrows, because this is not a time-sensitive operation
-		func (u *User) AddFriend(otherUser *User) {
-			u.friends().Add(otherUser.id)
-			otherUser.friends().Add(u.id)
-		}
-	
-		func (u *User) Unfriend(otherUser *User) {
-			u.friends().Remove(otherUser.id)
-			otherUser.friends().Remove(u.id)
-		}
-*/
 package redis
 
 import (
@@ -100,7 +17,7 @@ type Config struct {
 	ConnectionCount int    `json:"conncount"`
 }
 
-//DefaultConfiguration returns a config with the easiest method for communicating with Redis
+//DefaultConfiguration returns a config with the easiest method for communicating with Redis.
 //All of the fields are public, so anything that needs to be changed for your setup can be done without affecting other fields
 func DefaultConfiguration() Config {
 	return Config{
@@ -169,8 +86,8 @@ func New(config Config) (r *Client, e error) {
 	return this, nil
 }
 
-//Load reads in information, and uses the JSON information it finds therein to find the communcation hookup details for Redis
-//it then returns a Client based on the supplied information
+//Load reads in information, and uses the JSON information it finds therein to find the communcation hookup details for Redis.
+//It then returns a Client based on the supplied information
 func Load(configfile io.Reader) (*Client, error) {
 	config := DefaultConfiguration()
 	dec := json.NewDecoder(configfile)
@@ -182,7 +99,7 @@ func Load(configfile io.Reader) (*Client, error) {
 	return New(config)
 }
 
-//Close frees up all connections previously allocated
+//Close frees up all connections previously allocated.
 //BUG: If you have connections still in use, things can get messy
 func (this *Client) Close() error {
 	if this.isClosed {
@@ -216,7 +133,7 @@ func (this Client) errCallback(e error, s string) {
 	this.fErrCallback.Call(e, s)
 }
 
-//Since redis operates in a separate thread, it isn't always possible to return an error status easily
+//Since redis operates in a separate thread, it isn't always possible to return an error status easily.
 //SetErrorCallback allows you to react to an error when it happens
 func (this *Client) SetErrorCallback(callback func(error, string)) {
 	this.fErrCallback = errCallbackFunc(callback)
@@ -266,87 +183,104 @@ func (this *Client) useNewConnection(callback func(*Connection)) {
 	callback(conn)
 }
 
-//Creates a basic key
+//Creates a basic key.
+//(This is a lightweight function - does *not* involve network I/O)
 func (this *Client) Key(key string) Key {
 	return newKey(this, key)
 }
 
-//Creates a String object
+//Creates a String object.
+//(This is a lightweight function - does *not* involve network I/O)
 func (this *Client) String(key string) String {
 	return newString(this, key)
 }
 
-//Creates an Integer object
+//Creates an Integer object.
+//(This is a lightweight function - does *not* involve network I/O)
 func (this *Client) Integer(key string) Integer {
 	return newInteger(this, key)
 }
 
-//Creates a Float object
+//Creates a Float object.
+//(This is a lightweight function - does *not* involve network I/O)
 func (this *Client) Float(key string) Float {
 	return newFloat(this, key)
 }
 
-//Creates a Bits object
+//Creates a Bits object.
+//(This is a lightweight function - does *not* involve network I/O)
 func (this *Client) Bits(key string) Bits {
 	return newBits(this, key)
 }
 
-//Creates a Hash object
+//Creates a Hash object.
+//(This is a lightweight function - does *not* involve network I/O)
 func (this *Client) Hash(key string) Hash {
 	return newHash(this, key)
 }
 
-//Creates a List object
+//Creates a List object.
+//(This is a lightweight function - does *not* involve network I/O)
 func (this *Client) List(key string) List {
 	return newList(this, key)
 }
 
-//Creates an IntList object
+//Creates an IntList object.
+//(This is a lightweight function - does *not* involve network I/O)
 func (this *Client) IntList(key string) IntList {
 	return newIntList(this, key)
 }
 
-//Creates a Set Object
+//Creates a Set Object.
+//(This is a lightweight function - does *not* involve network I/O)
 func (this *Client) Set(key string) Set {
 	return newSet(this, key)
 }
 
-//Creates an IntSet Object
+//Creates an IntSet Object.
+//(This is a lightweight function - does *not* involve network I/O)
 func (this *Client) IntSet(key string) IntSet {
 	return newIntSet(this, key)
 }
 
-//Creates a SortedSet Object
+//Creates a SortedSet Object.
+//(This is a lightweight function - does *not* involve network I/O)
 func (this *Client) SortedSet(key string) SortedSet {
 	return newSortedSet(this, key)
 }
 
-//Creates a SortedIntSet Object
+//Creates a SortedIntSet Object.
+//(This is a lightweight function - does *not* involve network I/O)
 func (this *Client) SortedIntSet(key string) SortedIntSet {
 	return newSortedIntSet(this, key)
 }
 
-//Creates a Mutex Object
+//Creates a Mutex Object.
+//(Warning - this is *not* a lightweight function - there is some network I/O involved in mutex initialization)
 func (this *Client) Mutex(key string) Mutex {
 	return newMutex(this, key, 1)
 }
 
-//Creates a Semaphore Object
+//Creates a Semaphore Object.
+//(Warning - this is *not* a lightweight function - there is some network I/O involved in mutex initialization)
 func (this *Client) Semaphore(key string, count int) Mutex {
 	return newMutex(this, key, count)
 }
 
-//Creates a ReadWriteMutex Object
+//Creates a ReadWriteMutex Object.
+//(Warning - this is *not* a lightweight function - there is some network I/O involved in mutex initialization)
 func (this *Client) ReadWriteMutex(key string, readers int) *ReadWriteMutex {
 	return newRWMutex(this, key, readers)
 }
 
-//Creates a Channel Object
+//Creates a Channel Object.
+//(This is a lightweight function - does *not* involve network I/O)
 func (this *Client) Channel(key string) Channel {
 	return newChannel(this, key)
 }
 
-//Creates a Prefix Object
+//Creates a Prefix Object, which helps namespace other Redis Objects.
+//(This is a lightweight function - does *not* involve network I/O)
 func (this *Client) Prefix(key string) Prefix {
 	return newPrefix(this, key)
 }

@@ -20,69 +20,81 @@ func (this SortedSet) IsValid() <-chan bool {
 	return c
 }
 
-//Add adds a member to a zset or updates its score if it already exists - ZADD command
+//ZADD command - 
+//Add adds a member to a zset or updates its score if it already exists;
 //returns true when adding, false when updating
 func (this SortedSet) Add(item string, score float64) <-chan bool {
 	return BoolCommand(this, this.args("zadd", ftoa(score), item)...)
 }
 
-//IncrementBy adjusts the score of the member within the zset - ZINCRBY command
+//ZINCRBY command - 
+//IncrementBy adjusts the score of the member within the zset;
 //returns the new score
 func (this SortedSet) IncrementBy(item string, score float64) <-chan float64 {
 	return FloatCommand(this, this.args("zincrby", ftoa(score), item)...)
 }
 
-//Remove removes a member from the zset if it is part of the set - ZREM command
+//ZREM command - 
+//Remove removes a member from the zset if it is part of the set;
 //returns whether or not it was part of the set
 func (this SortedSet) Remove(item string) <-chan bool {
 	return BoolCommand(this, this.args("zrem", item)...)
 }
 
-//Size returns the number of members of the zset - ZCARD command
+//ZCARD command - 
+//Size returns the number of members of the zset
 func (this SortedSet) Size() <-chan int {
 	return IntCommand(this, this.args("zcard")...)
 }
 
-//IndexOf returns the index of a member - ZRANK command
+//ZRANK command - 
+//IndexOf returns the index of a member.
 //ie, the lowest ranked member would have an index of 0, and the next lowest an index of 1
 func (this SortedSet) IndexOf(item string) <-chan int {
 	return IntCommand(this, this.args("zrank", item)...)
 }
 
-//ReverseIndexOf returns the reverse index of a member - ZREVRANK command
+//ZREVRANK command - 
+//ReverseIndexOf returns the reverse index of a member.
 //ie, the highest ranked member would have an reverse index of 0, and the next highest an reverse index of 1
 func (this SortedSet) ReverseIndexOf(item string) <-chan int {
 	return IntCommand(this, this.args("zrevrank", item)...)
 }
 
-//ScoreOf returns the score associated with a given member of the zset - ZSCORE command
+//ZSCORE command - 
+//ScoreOf returns the score associated with a given member of the zset
 func (this SortedSet) ScoreOf(item string) <-chan float64 {
 	return FloatCommand(this, this.args("zscore", item)...)
 }
 
-//IndexedBetween returns a slice of all members between the indices - ZRANGE command
+//ZRANGE command - 
+//IndexedBetween returns a slice of all members between the indices
 func (this SortedSet) IndexedBetween(start, stop int) <-chan []string {
 	return SliceCommand(this, this.args("zrange", itoa(start), itoa(stop))...)
 }
 
-//ReverseIndexedBetween returns a slice of all members between the reverse indices - ZREVRANGE command
+//ZREVRANGE command - 
+//ReverseIndexedBetween returns a slice of all members between the reverse indices
 func (this SortedSet) ReverseIndexedBetween(start, stop int) <-chan []string {
 	return SliceCommand(this, this.args("zrevrange", itoa(start), itoa(stop))...)
 }
 
-//IndexedBetweenWithScores returns a map of all members between the indices and their associated scores - ZRANGE command
-//warning: golang maps are not ordered
+//ZRANGE command - 
+//IndexedBetweenWithScores returns a map of all members between the indices and their associated scores
+//(warning: golang maps are not ordered)
 func (this SortedSet) IndexedBetweenWithScores(start, stop int) <-chan map[string]float64 {
 	return stringfloatMapChannel(MapCommand(this, this.args("zrange", itoa(start), itoa(stop), "WITHSCORES")...))
 }
 
-//IndexedBetweenWithScores returns a map of all members between the reverse indices and their associated scores - ZREVRANGE command
-//warning: golang maps are not ordered
+//ZREVRANGE command - 
+//IndexedBetweenWithScores returns a map of all members between the reverse indices and their associated scores
+//(warning: golang maps are not ordered)
 func (this SortedSet) ReverseIndexedBetweenWithScores(start, stop int) <-chan map[string]float64 {
 	return stringfloatMapChannel(MapCommand(this, this.args("zrevrange", itoa(start), itoa(stop), "WITHSCORES")...))
 }
 
-//RemoveIndexedBetween removes all members between the indices - ZREMRANGEBYRANK command
+//ZREMRANGEBYRANK command - 
+//RemoveIndexedBetween removes all members between the indices;
 //returns the number of members removed
 func (this SortedSet) RemoveIndexedBetween(start, stop int) <-chan int {
 	return IntCommand(this, this.args("zremrangebyrank", itoa(start), itoa(stop))...)
@@ -144,15 +156,15 @@ func (this *SortedSetRange) BelowOrEqualTo(max float64) *SortedSetRange {
 	return this
 }
 
-//Reversed returns the results in reverse order
-//only useful if getting or getting with scores; not useful for counting or removing
+//Reversed returns the results in reverse order.
+//This is only useful if getting or getting with scores, not useful for counting or removing
 func (this *SortedSetRange) Reversed() *SortedSetRange {
 	this.reversed = !this.reversed
 	return this
 }
 
-//Limit limits the results you get back - it skips the first "offset" results, and then only returns the next "offset"
-//only useful if getting or getting with scores; not useful for counting or removing
+//Limit limits the results you get back - it skips the first "offset" results, and then only returns the next "offset".
+//This is only useful if getting or getting with scores, not useful for counting or removing
 func (this *SortedSetRange) Limit(offset, count int) *SortedSetRange {
 	this.limited = true
 	this.offset = offset
@@ -160,18 +172,21 @@ func (this *SortedSetRange) Limit(offset, count int) *SortedSetRange {
 	return this
 }
 
-//Count returns the number of members that fit in the search criteria - ZCOUNT command
+//ZCOUNT command - 
+//Count returns the number of members that fit in the search criteria
 func (this *SortedSetRange) Count() <-chan int {
 	return IntCommand(this.key, this.key.args("zcount", this.min, this.max)...)
 }
 
-//Remove removes all members that fit the search criteria from the zset - ZREMRANGEBYSCORE command
+//ZREMRANGEBYSCORE command - 
+//Remove removes all members that fit the search criteria from the zset;
 //returns the number of members removed
 func (this *SortedSetRange) Remove() <-chan int {
 	return IntCommand(this.key, this.key.args("zremrangebyscore", this.min, this.max)...)
 }
 
-//Get returns a list of all members fitting the search criteria - ZRANGEBYSCORE or ZREVRANGEBYSCORE command
+//ZRANGEBYSCORE or ZREVRANGEBYSCORE command
+//Get returns a list of all members fitting the search criteria
 func (this *SortedSetRange) Get() <-chan []string {
 	op := "zrangebyscore"
 	args := make([]string, 2, 5)
@@ -192,7 +207,8 @@ func (this *SortedSetRange) Get() <-chan []string {
 	return SliceCommand(this.key, this.key.args(op, args...)...)
 }
 
-//GetWithScores returns a map with all members fitting the search criteria and their associated scores - ZRANGEBYSCORE or ZREVRANGEBYSCORE command
+//ZRANGEBYSCORE or ZREVRANGEBYSCORE command - 
+//GetWithScores returns a map with all members fitting the search criteria and their associated scores
 func (this *SortedSetRange) GetWithScores() <-chan map[string]float64 {
 	op := "zrangebyscore"
 	args := make([]string, 3, 6)
@@ -224,7 +240,8 @@ type SortedSetCombo struct {
 	key Key
 }
 
-//StoreUnion sets up a combo that will be a union of other zsets - ZUNIONSTORE command
+//ZUNIONSTORE command
+//StoreUnion sets up a combo that will be a union of other zsets
 func (this SortedSet) StoreUnion() *SortedSetCombo {
 	return &SortedSetCombo{
 		op:  "zunionstore",
@@ -232,7 +249,8 @@ func (this SortedSet) StoreUnion() *SortedSetCombo {
 	}
 }
 
-//StoreIntersection sets up a combo that will be an intersection of other zsets - ZINTERSTORE command
+//ZINTERSTORE command - 
+//StoreIntersection sets up a combo that will be an intersection of other zsets
 func (this SortedSet) StoreIntersection() *SortedSetCombo {
 	return &SortedSetCombo{
 		op:  "zinterstore",
